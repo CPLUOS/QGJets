@@ -1,0 +1,13 @@
+executable = generate.sh
+universe = vanilla
+output = generate-out.txt
+error = generate-error.txt
+log = generate-log.txt
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files = RESULT
+
+requirements = (Machine =!= "cms-t3-wn1001.sdfarm.kr")
+
+queue

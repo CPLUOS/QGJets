@@ -1,0 +1,43 @@
+Main:numberOfEvents = 20000         ! number of events to generate
+
+! https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/MinBias_TuneCUETP8M1_13TeV_pythia8_cff.py
+! includes commonsettings, cuetp8m1 tune settings and its settings
+
+! https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/Pythia8CommonSettings_cfi.py
+Tune:preferLHAPDF = 2
+Main:timesAllowErrors = 10000
+Check:epTolErr = 0.01
+Beams:setProductionScalesFromLHEF = off
+SLHA:keepSM = on
+SLHA:minMassSM = 1000.
+ParticleDecays:limitTau0 = on
+ParticleDecays:tau0Max = 10
+ParticleDecays:allowPhotonRadiation = on
+
+! https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/Pythia8CUEP8M1Settings_cfi.py
+Tune:pp 14
+Tune:ee 7
+MultipartonInteractions:pT0Ref=2.4024
+MultipartonInteractions:ecmPow=0.25208
+MultipartonInteractions:expPow=1.6
+
+! https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/MinBias_TuneCUETP8M1_13TeV_pythia8_cff.py
+
+SoftQCD:nonDiffractive = on
+SoftQCD:singleDiffractive = on
+SoftQCD:doubleDiffractive = on
+
+! Other from Delphes Pythia8 NoLHE file
+
+! 2) Settings related to output in init(), next() and stat().
+Init:showChangedSettings = on      ! list changed settings
+Init:showChangedParticleData = off ! list changed particle data
+Next:numberCount = 100             ! print message every n events
+Next:numberShowInfo = 1            ! print event information n times
+Next:numberShowProcess = 1         ! print process record n times
+Next:numberShowEvent = 0           ! print event record n times
+
+! 3) Beam parameter settings. Values below agree with default ones.
+Beams:idA = 2212                   ! first beam, p = 2212, pbar = -2212
+Beams:idB = 2212                   ! second beam, p = 2212, pbar = -2212
+Beams:eCM = 13000.                 ! CM energy of collision
