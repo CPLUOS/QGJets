@@ -1,8 +1,8 @@
 #!/bin/bash
 
 RESULT_DIR="RESULT"
-DIR=`date +%Y%m%d%k%M`
-RNDMDIR=`mktemp -d -t --tmpdir= output-XXXXXXXXXXXXXX`
+DIR=`date +%Y%m%d%H%M`
+RNDMDIR=`mktemp -d -t --tmpdir=. output-XXXXXXXXXXXXXX`
 OUTPUTDIR=$RESULT_DIR/$DIR/$RNDMDIR
 
 /bin/mkdir -p $OUTPUTDIR

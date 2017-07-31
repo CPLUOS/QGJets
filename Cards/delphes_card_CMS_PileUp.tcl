@@ -75,7 +75,7 @@ module PileUpMerger PileUpMerger {
   set PileUpFile MinBias.pileup
 
   # average expected pile up
-  set MeanPileUp 50
+  set MeanPileUp 25
 
    # maximum spread in the beam direction in m
   set ZVertexSpread 0.25
@@ -867,10 +867,13 @@ module TreeWriter TreeWriter {
 #  add Branch TrackMerger/tracks Track Track
 #  add Branch Calorimeter/towers Tower Tower
 
-#  add Branch Calorimeter/eflowTracks EFlowTrack Track
-#  add Branch Calorimeter/eflowPhotons EFlowPhoton Tower
-#  add Branch Calorimeter/eflowNeutralHadrons EFlowNeutralHadron Tower
-
+  # add Branch Calorimeter/eflowTracks EFlowTrack Track
+  # add Branch Calorimeter/eflowPhotons EFlowPhoton Tower
+  # add Branch Calorimeter/eflowNeutralHadrons EFlowNeutralHadron Tower
+  add Branch TrackPileUpSubtractor/eflowTracks EFlowTrack Track
+  add Branch ECal/eflowPhotons EFlowPhoton Tower
+  add Branch HCal/eflowNeutralHadrons EFlowNeutralHadron Tower
+  
   add Branch GenJetFinder/jets GenJet Jet
   add Branch GenMissingET/momentum GenMissingET MissingET
 

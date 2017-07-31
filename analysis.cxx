@@ -7,10 +7,12 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <vector>
 
 using std::string;
 
 Double_t minJetPT = 20.0;
+Double_t maxJetEta = 2.4;
 Double_t dRCut = 0.3;
 
 Double_t DeltaPhi(Double_t phi1, Double_t phi2) {
@@ -63,6 +65,11 @@ int main(int argc, char *argv[])
   
   TClonesArray *jets = 0;
   intr->SetBranchAddress("Jet", &jets);
+  TClonesArray *particles = 0;
+  intr->SetBranchAddress("Particle", &particles);
+
+  TClonesArray *vertices = 0;
+  intr->SetBranchAddress("Vertex", &vertices);
   
   auto outf = TFile::Open(out.c_str(), "RECREATE");
   auto outtr = new TTree{"jetAnalyser", "jetAnalyser"};
@@ -73,6 +80,9 @@ int main(int argc, char *argv[])
 #define BranchVF(name) std::vector<float> name; outtr->Branch(#name, "vector<float>", &name);
 #define BranchVI(name) std::vector<int> name; outtr->Branch(#name, "vector<int>", &name);
   BranchI(nEvent);
+  BranchI(nJets);
+  BranchI(nGoodJets);
+  BranchI(nPriVtxs);
   BranchF(pt);
   BranchF(eta);
   BranchF(phi);
@@ -83,21 +93,70 @@ int main(int argc, char *argv[])
   BranchI(nmult);
   BranchI(cmult);
   BranchI(partonId);
+  BranchI(flavorId);
   BranchVF(dau_pt);
   BranchVF(dau_deta);
   BranchVF(dau_dphi);
   BranchVI(dau_charge);
+  BranchVI(dau_ishadronic);
   BranchI(n_dau);
-  
+
+  bool firstTime = true;
   for (size_t iev = 0; iev < intr->GetEntries(); ++iev) {
     intr->GetEntry(iev);
     nEvent = iev;
+    nJets = jets->GetEntries();
+    if (vertices)
+      nPriVtxs = vertices->GetEntries();
+    else // no pileup mode
+      nPriVtxs = 1;
+
+    nGoodJets = 0;
+    for (unsigned k = 0; k < jets->GetEntries(); ++k) {
+      auto j = (const Jet *) jets->At(k);
+      if (j->PT < minJetPT)
+	continue;
+      if (fabs(j->Eta) > maxJetEta)
+	continue;
+      
+      nGoodJets++;
+    }
+    
+    // match to hard process in pythia
+    std::vector<const GenParticle*> hardGen;
+    for (unsigned k = 0; k < particles->GetEntries(); ++k) {
+      auto p = (const GenParticle *) particles->At(k);
+      if (p->Status != 23) continue; // Status 23 is hard process parton in Pythia8
+      if (abs(p->PID) > 5 && p->PID != 21) continue; // consider quarks and gluons only
+      hardGen.push_back(p);
+      if (firstTime) {
+	std::cout << "WARNING: ASSUMING PYTHIA8 HARDQCD GENERATION, ONLY 2 HARD PARTONS CONSIDERED" << std::endl;
+	firstTime = false;
+      }
+      if (hardGen.size() == 2) break;
+    }
+    if (hardGen.size() != 2) std::cout << "hardGen " << hardGen.size() << std::endl;
     
     for (unsigned j = 0; j < jets->GetEntries(); ++j) {
       auto jet = (Jet*) jets->At(j);
 
       // some cuts, check pt
       if (jet->PT < minJetPT) continue;
+      if (fabs(jet->Eta) > maxJetEta) continue;
+
+      // match to hard process in pythia
+      bool matched = false;
+      const GenParticle *match = 0;
+      float dRMin = 10.;
+      for (auto& p : hardGen) {
+      	float dR = DeltaR(jet->Eta - p->Eta, DeltaPhi(jet->Phi, p->Phi));
+      	if (dR < dRMin && dR < dRCut) {
+      	  matched = true;
+      	  match = p;
+      	}
+      }
+      if (!matched) continue;
+      
       // check overlapping jets
       bool overlap = false;
       for (unsigned k = 0; k < jets->GetEntries(); ++k) {
@@ -113,7 +172,8 @@ int main(int argc, char *argv[])
       phi = jet->Phi;
       nmult = jet->NNeutrals;
       cmult = jet->NCharged;
-      partonId = jet->Flavor;
+      partonId = match->PID;
+      flavorId = jet->Flavor;
 
       axis1 = 0; axis2 = 0;
       ptD = 0;
@@ -141,12 +201,19 @@ int main(int argc, char *argv[])
 	  deta = tower->Eta - jet->Eta;
 	  dphi = DeltaPhi(tower->Phi, jet->Phi);
 	  dau_charge.push_back(0);
+	  if (tower->Eem == 0.0)
+	    dau_ishadronic.push_back(1);
+	  else if (tower->Ehad == 0.0)
+	    dau_ishadronic.push_back(0);
+	  else
+	    std::cout << "ERROR: Tower with Had " << tower->Ehad << " and EM " << tower->Eem << " energy" << std::endl;
 	}
 	else if (auto track = dynamic_cast<Track*>(dau)) {
 	  dpt = track->PT;
 	  deta = track->Eta - jet->Eta;
 	  dphi = DeltaPhi(track->Phi, jet->Phi);
 	  dau_charge.push_back(track->Charge);
+	  dau_ishadronic.push_back(0);
 	} else {
 	  std::cout << "BAD DAUGHTER! " << dau << std::endl;
 	}

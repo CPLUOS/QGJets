@@ -3,10 +3,11 @@ import select
 import os
 import shutil
 
-
+runWithPileup = False
 # outdir = 'MinBias'; writeOut = True; minBias = True
 # outdir = 'PythiaMinBias_TuneCUETP8M1'; writeOut = False; minBias = True
-outdir = 'PythiaQCD_CUETP8M1_flat'; writeOut = False; minBias = False
+outdir = 'PythiaQCD_CUETP8M1_flat'; writeOut = False; minBias = False; runWithPileup = True
+outdir = 'LHE_QCD_HT500toInf'; writeOut = False; minBias = False; runWithPileup = False
 
 print("Running Delphes+Pythia8 in Pythia8 generation mode using {} command file".format(outdir))
 
@@ -72,7 +73,19 @@ if writeOut:
     cmnd.close()
 
 delphes_log = open(outdir+'_delphes.log', 'w')
-delphes = Popen(["./DelphesPythia8", "./Cards/delphes_card_CMS.tcl", cmndname, "delphes_"+outdir+".root"], stdin=PIPE, stdout=PIPE)
+
+if not os.path.exists(cmndname):
+    cmndname = cmndname.replace("config_", "config")
+    if not os.path.exists(cmndname):
+        print("Command file not found", cmndname)
+        exit(2)
+
+if runWithPileup:
+    outFile = "delphes_"+outdir+"_with_pileup.root"
+    delphes = Popen(["./DelphesPythia8", "./Cards/delphes_card_CMS_PileUp.tcl", cmndname, outFile], stdin=PIPE, stdout=PIPE)
+else:
+    outFile = "delphes_"+outdir+".root"
+    delphes = Popen(["./DelphesPythia8", "./Cards/delphes_card_CMS.tcl", cmndname, outFile], stdin=PIPE, stdout=PIPE)
 while True:
     nextline = delphes.stdout.readline()
     if nextline == '' and delphes.poll() is not None:
@@ -80,6 +93,10 @@ while True:
     delphes_log.write(nextline)
 
 delphes_log.close()
+print("Finished running Delphes.")
 if minBias:
     print("Converting to pileup file")
-    os.system("../install/Delphes-3.4.1/root2pileup MinBias.pileup delphes_%s.root" % outdir)
+    os.system("../install/Delphes-3.4.1/root2pileup MinBias_%s.pileup delphes_%s.root" % (outdir, outdir))
+else:
+    print("Running jet analaysis")
+    os.system("./analysis %s %s" % (outFile, outFile.replace('delphes', 'analysis')))

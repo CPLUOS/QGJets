@@ -8,6 +8,15 @@ For running over CMS data:
 
 Running on the batch system, use runCMS.jds (uses runCMS.sh and delphesCMS.py)
 
+[2017-07-11 Tue]
+Use runCMSSubmit.py to run everything in CMS data, then combine:
+
+hadd Delphes_CMSJet.root RESULT/*/var/lib/condor/execute/dir_*/output-*/analysis_CMS.root
+
+then remove RESULT
+
+Note that this has no pileup added!
+
 * Running Madgraph+Pythia8+Delphes
 
 source setup.sh
