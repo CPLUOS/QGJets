@@ -3,13 +3,14 @@ import select
 import os
 import shutil
 
-runWithPileup = False
+gangedEcal = True
+runWithPileup = True
 # outdir = 'MinBias'; writeOut = True; minBias = True
 # outdir = 'PythiaMinBias_TuneCUETP8M1'; writeOut = False; minBias = True
-outdir = 'PythiaQCD_CUETP8M1_flat'; writeOut = False; minBias = False; runWithPileup = True
-outdir = 'LHE_QCD_HT500toInf'; writeOut = False; minBias = False; runWithPileup = False
+outdir = 'PythiaQCD_CUETP8M1_flat'; writeOut = False; minBias = False
+# outdir = 'LHE_QCD_HT500toInf'; writeOut = False; minBias = False; runWithPileup = False
 
-print("Running Delphes+Pythia8 in Pythia8 generation mode using {} command file".format(outdir))
+print("Running Delphes+Pythia8 in Pythia8 generation mode using {} command file {} {}".format(outdir, "PU" if runWithPileup else "", "GEC" if gangedEcal else ""))
 
 cmndname = 'Cards/config_'+outdir+'.cmnd'
 if writeOut:
@@ -80,9 +81,15 @@ if not os.path.exists(cmndname):
         print("Command file not found", cmndname)
         exit(2)
 
-if runWithPileup:
+if runWithPileup and gangedEcal:
+    outFile = "delphes_"+outdir+"_with_pileup_ECal_Gang.root"
+    delphes = Popen(["./DelphesPythia8", "./Cards/delphes_card_CMS_PileUp_ECal_Gang.tcl", cmndname, outFile], stdin=PIPE, stdout=PIPE)
+elif runWithPileup:
     outFile = "delphes_"+outdir+"_with_pileup.root"
     delphes = Popen(["./DelphesPythia8", "./Cards/delphes_card_CMS_PileUp.tcl", cmndname, outFile], stdin=PIPE, stdout=PIPE)
+elif gangedEcal:
+    outFile = "delphes_"+outdir+"_ECal_Gang.root"
+    delphes = Popen(["./DelphesPythia8", "./Cards/delphes_card_CMS_ECal_Gang.tcl", cmndname, outFile], stdin=PIPE, stdout=PIPE)
 else:
     outFile = "delphes_"+outdir+".root"
     delphes = Popen(["./DelphesPythia8", "./Cards/delphes_card_CMS.tcl", cmndname, outFile], stdin=PIPE, stdout=PIPE)

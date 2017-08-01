@@ -234,7 +234,7 @@ module SimpleCalorimeter ECal {
 
   # 0.02 unit in eta up to eta = 1.5 (barrel)
   for {set i 1} {$i <= 68} {incr i} {
-    set eta [expr {$-2.958 + i * 0.087}]
+    set eta [expr {-2.958 + $i * 0.087}]
     add EtaPhiBins $eta $PhiBins
   }
 

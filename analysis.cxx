@@ -182,47 +182,104 @@ int main(int argc, char *argv[])
       dau_deta.clear();
       dau_dphi.clear();
       dau_charge.clear();
+      dau_ishadronic.clear();
       n_dau = jet->Constituents.GetEntries();
       float sum_weight = 0;
       float sum_pt = 0;
       float sum_detadphi = 0;
       float sum_deta = 0, sum_deta2 = 0, ave_deta = 0, ave_deta2 = 0;
       float sum_dphi = 0, sum_dphi2 = 0, ave_dphi = 0, ave_dphi2 = 0;
+
+      // fill hadronic first
+      int nhad = 0;
       for (size_t ic = 0; ic < n_dau; ++ic) {
+	double dpt, deta, dphi;
 	auto dau = jet->Constituents.At(ic);
 	// Constituents can be a tower (neutral) or a track (charged)
-
-	float deta = 10, dphi = 10, dr = 10, dpt = 0;
-	if (auto tower = dynamic_cast<Tower*>(dau)) {
-	  if (tower->ET < 1.0) { // Don't accept low energy neutrals
-	    continue;
-	  }
-	  dpt = tower->ET;
-	  deta = tower->Eta - jet->Eta;
-	  dphi = DeltaPhi(tower->Phi, jet->Phi);
-	  dau_charge.push_back(0);
-	  if (tower->Eem == 0.0)
-	    dau_ishadronic.push_back(1);
-	  else if (tower->Ehad == 0.0)
-	    dau_ishadronic.push_back(0);
-	  else
-	    std::cout << "ERROR: Tower with Had " << tower->Ehad << " and EM " << tower->Eem << " energy" << std::endl;
+	auto tower = dynamic_cast<Tower*>(dau);
+	if (!tower) continue;
+	if (tower->ET < 1.0) { // Don't accept low energy neutrals
+	  continue;
 	}
-	else if (auto track = dynamic_cast<Track*>(dau)) {
+
+	if ((tower->Ehad != 0.0) && (tower->Eem != 0.0))
+	  std::cout << "ERROR: Tower with Had " << tower->Ehad << " and EM " << tower->Eem << " energy" << std::endl;
+
+	if (tower->Ehad == 0.0) {
+	  continue;
+	}
+	dpt = tower->ET;
+	deta = tower->Eta - jet->Eta;
+	dphi = DeltaPhi(tower->Phi, jet->Phi);
+	dau_charge.push_back(0);
+	dau_ishadronic.push_back(1);
+	dau_pt.push_back(dpt);
+	dau_deta.push_back(deta);
+	dau_dphi.push_back(dphi);
+	nhad++;
+      }
+
+      // then fill emag+track
+      for (size_t ic = 0; ic < n_dau; ++ic) {
+	auto dau = jet->Constituents.At(ic);
+
+	double dpt, deta, dphi, dr;
+	// Constituents can be a tower (neutral) or a track (charged)
+	if (auto track = dynamic_cast<Track*>(dau)) {
 	  dpt = track->PT;
 	  deta = track->Eta - jet->Eta;
 	  dphi = DeltaPhi(track->Phi, jet->Phi);
 	  dau_charge.push_back(track->Charge);
 	  dau_ishadronic.push_back(0);
+	  dau_pt.push_back(dpt);
+	  dau_deta.push_back(deta);
+	  dau_dphi.push_back(dphi);
+	} else if (auto tower = dynamic_cast<Tower*>(dau)) {
+	  if (tower->ET < 1.0) { // Don't accept low energy neutrals
+	    continue;
+	  }
+	  if (tower->Eem == 0.0) {
+	    continue;
+	  }
+
+	  dpt = tower->ET;
+	  deta = tower->Eta - jet->Eta;
+	  dphi = DeltaPhi(tower->Phi, jet->Phi);
+	  
+	  bool found = false;
+	  for (size_t ih; ih < nhad; ++ih) {
+	    if ((fabs(dau_deta[ih]) < 1.653) && (fabs(deta - dau_deta[ih]) < 0.08) && (DeltaPhi(dphi, dau_dphi[ih]) < 0.08)) {
+	      found = true;
+	    } else if ((fabs(dau_deta[ih]) < 4.35) && (fabs(deta - dau_deta[ih]) < 0.16) && (DeltaPhi(dphi, dau_dphi[ih]) < 0.16)) {
+	      found = true;
+	    }
+
+	    // if the emag tower within the bounds, add the energy to the hadr. tower
+	    if (found) {
+	      dau_pt[ih] += dpt;
+	      break;
+	    }
+	  }
+
+	  if (!found) {
+	    dau_charge.push_back(0);
+	    dau_ishadronic.push_back(1);
+	    dau_pt.push_back(dpt);
+	    dau_deta.push_back(deta);
+	    dau_dphi.push_back(dphi);
+	  }
 	} else {
 	  std::cout << "BAD DAUGHTER! " << dau << std::endl;
 	}
+      } 
 
-	float weight = dpt*dpt;
-	dau_pt.push_back(dpt);
-	dau_deta.push_back(deta);
-	dau_dphi.push_back(dphi);
-	dr = DeltaR(deta, dphi);
+      for (size_t ic = 0; ic < dau_pt.size(); ++ic) {
+	double dpt = dau_pt[ic];
+	double deta = dau_deta[ic];
+	double dphi = dau_dphi[ic];
+	double weight = dpt*dpt;
+	
+ 	double dr = DeltaR(deta, dphi);
 	pt_dr_log += std::log(dpt / dr);
 	sum_weight += weight;
 	sum_pt += dpt;
@@ -231,7 +288,7 @@ int main(int argc, char *argv[])
 	sum_dphi += dphi*weight;
 	sum_dphi2 += dphi*dphi*weight;
 	sum_detadphi += deta*dphi*weight;
-      }
+     }
 
       float a = 0, b = 0, c = 0;
       if (sum_weight > 0) {
@@ -253,6 +310,8 @@ int main(int argc, char *argv[])
 
       axis1 = -std::log(axis1);
       axis2 = -std::log(axis2);
+
+      n_dau = dau_deta.size();
 
       outtr->Fill();
     }
