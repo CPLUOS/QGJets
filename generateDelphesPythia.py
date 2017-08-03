@@ -3,7 +3,7 @@ import select
 import os
 import shutil
 
-gangedEcal = True
+gangedEcal = False
 runWithPileup = True
 # outdir = 'MinBias'; writeOut = True; minBias = True
 # outdir = 'PythiaMinBias_TuneCUETP8M1'; writeOut = False; minBias = True
