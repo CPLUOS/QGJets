@@ -1,6 +1,8 @@
-/analysis
-/DelphesCMSFWLite
-/DelphesPythia8
-/*root
+/1-AnalyseJets/analysis
+/0-GenerateJets/DelphesCMSFWLite
+/0-GenerateJets/DelphesPythia8
+*root
 *txt
 *pcm
+*log
+*pileup

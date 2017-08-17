@@ -12,6 +12,6 @@ if os.getenv('DELPHES_CMS_FILELIST') is not None:
     print("DELPHES_CMS_FILELIST set, overwriting argument input")
     args.files = os.getenv('DELPHES_CMS_FILELIST').split(',')
 
-os.system('/cms/scratch/iwatson/jetAnalysis/DelphesCMSFWLite /cms/scratch/iwatson/jetAnalysis/Cards/delphes_card_CMS.tcl delphesCMS_test.root '+' '.join(args.files))
+os.system('/cms/scratch/iwatson/jetAnalysis/DelphesCMSFWLite /cms/scratch/iwatson/jetAnalysis/Cards/delphes_card_CMS_PileUp.tcl delphesCMS_test.root '+' '.join(args.files))
 
 os.system('/cms/scratch/iwatson/jetAnalysis/analysis delphesCMS_test.root analysis_CMS.root')

@@ -1,0 +1,13 @@
+executable = genPythia.sh
+universe = vanilla
+output = genp-out.txt
+error = genp-error.txt
+log = genp-log.txt
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files = root
+
+requirements = (Machine =!= "cms-t3-wn1001.sdfarm.kr")
+
+queue

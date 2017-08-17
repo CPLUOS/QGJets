@@ -15,7 +15,7 @@ Double_t minJetPT = 20.0;
 Double_t maxJetEta = 2.4;
 Double_t dRCut = 0.3;
 bool doHadMerge = false;
-bool doEcalCl = false;
+bool doEcalCl = true;
 
 bool debug=false;
 
@@ -44,13 +44,13 @@ struct cluster {
   int ishadronic;
 };
 
-void fillDaughters(Jet *jet,
+void fillDaughters(Jet *jet, float &leading_dau_pt, float& leading_dau_eta,
 		   std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
 		   std::vector<int> &dau_charge, std::vector<int> &dau_ishadronic, int& nmult, int& cmult);
-void fillDaughters_HADMERGE(Jet *jet,
+void fillDaughters_HADMERGE(Jet *jet, float &leading_dau_pt, float& leading_dau_eta,
 			    std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
 			    std::vector<int> &dau_charge, std::vector<int> &dau_ishadronic, int& nmult);
-void fillDaughter_EcalCluster(Jet *jet,
+void fillDaughter_EcalCluster(Jet *jet, float &leading_dau_pt, float& leading_dau_eta,
 			      std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
 			      std::vector<int> &dau_charge, std::vector<int> &dau_ishadronic,
 			      int& nmult, int& cmult, std::vector<float> &test);
@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
 #define Branch_(type, name, suffix) type name = 0; outtr->Branch(#name, &name, #name "/" #suffix);
 #define BranchI(name) Branch_(Int_t, name, I)
 #define BranchF(name) Branch_(Float_t, name, F)
+#define BranchO(name) Branch_(Bool_t, name, O)
 #define BranchVF(name) std::vector<float> name; outtr->Branch(#name, "vector<float>", &name);
 #define BranchVI(name) std::vector<int> name; outtr->Branch(#name, "vector<int>", &name);
   BranchI(nEvent);
@@ -101,10 +102,16 @@ int main(int argc, char *argv[])
   BranchF(ptD);
   BranchF(axis1);
   BranchF(axis2);
+  BranchF(leading_dau_pt);
+  BranchF(leading_dau_eta);
   BranchI(nmult);
   BranchI(cmult);
   BranchI(partonId);
   BranchI(flavorId);
+
+  BranchI(flavorAlgoId);
+  BranchI(flavorPhysId);
+
   BranchVF(dau_pt);
   BranchVF(dau_deta);
   BranchVF(dau_dphi);
@@ -112,6 +119,7 @@ int main(int argc, char *argv[])
   BranchVI(dau_charge);
   BranchVI(dau_ishadronic);
   BranchI(n_dau);
+  BranchO(matched);
 
   bool firstTime = true;
   for (size_t iev = 0; iev < intr->GetEntries(); ++iev) {
@@ -157,7 +165,7 @@ int main(int argc, char *argv[])
       if (fabs(jet->Eta) > maxJetEta) continue;
 
       // match to hard process in pythia
-      bool matched = false;
+      matched = false;
       const GenParticle *match = 0;
       float dRMin = 10.;
       for (auto& p : hardGen) {
@@ -167,7 +175,7 @@ int main(int argc, char *argv[])
       	  match = p;
       	}
       }
-      if (!matched) continue;
+      // if (!matched) continue;
       
       // check overlapping jets
       bool overlap = false;
@@ -184,8 +192,13 @@ int main(int argc, char *argv[])
       phi = jet->Phi;
       nmult = jet->NNeutrals;
       cmult = jet->NCharged;
-      partonId = match->PID;
+      if (match)
+	partonId = match->PID;
+      else
+	partonId = 0;
       flavorId = jet->Flavor;
+      flavorAlgoId = jet->FlavorAlgo;
+      flavorPhysId = jet->FlavorPhys;
 
       axis1 = 0; axis2 = 0;
       ptD = 0;
@@ -195,13 +208,14 @@ int main(int argc, char *argv[])
       dau_dphi.clear();
       dau_charge.clear();
       dau_ishadronic.clear();
+      test.clear();
 
       if (doEcalCl)
-	fillDaughter_EcalCluster(jet, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult, cmult, test);
+	fillDaughter_EcalCluster(jet, leading_dau_pt, leading_dau_eta, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult, cmult, test);
       else if (doHadMerge)
-	fillDaughters_HADMERGE(jet, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult);
+	fillDaughters_HADMERGE(jet, leading_dau_pt, leading_dau_eta, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult);
       else
-	fillDaughters(jet, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult, cmult);
+	fillDaughters(jet, leading_dau_pt, leading_dau_eta, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult, cmult);
       
       float sum_weight = 0;
       float sum_pt = 0;
@@ -259,7 +273,7 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void fillDaughter_EcalCluster(Jet *jet,
+void fillDaughter_EcalCluster(Jet *jet, float& leading_dau_pt, float& leading_dau_eta,
 			      std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
 			      std::vector<int> &dau_charge, std::vector<int> &dau_ishadronic,
 			      int& nmult, int& cmult, std::vector<float> &test)
@@ -269,6 +283,8 @@ void fillDaughter_EcalCluster(Jet *jet,
   // Find ECal clusters
   std::vector<int> ecalDau;
   std::vector<int> hcalDau;
+
+  leading_dau_pt = leading_dau_eta = 0;
   
   for (size_t ic = 0; ic < n_dau; ++ic) {
     double dpt, deta, dphi;
@@ -294,6 +310,12 @@ void fillDaughter_EcalCluster(Jet *jet,
       dau_dphi.push_back(DeltaPhi(track->Phi, jet->Phi));
       dau_charge.push_back(track->Charge);
       dau_ishadronic.push_back(0);
+
+      if (track->PT > leading_dau_pt) {
+	leading_dau_pt = track->PT;
+	leading_dau_eta = track->Eta - jet->Eta;
+      }
+      
       continue;
     }
     if (tower->ET < 1.0) { // Don't accept low energy neutrals
@@ -409,20 +431,27 @@ void fillDaughter_EcalCluster(Jet *jet,
 
     dau_ishadronic.push_back(m.ishadronic);
     dau_charge.push_back(0);
+
+    if (m.pt > leading_dau_pt) {
+      leading_dau_pt = m.pt;
+      leading_dau_eta = m.eta - jet->Eta;
+    }
   }
   if (debug) std::cout << tot << std::endl;
 
   if (debug) exit(1);
 }
 
-void fillDaughters_HADMERGE(Jet *jet,
+void fillDaughters_HADMERGE(Jet *jet, float& leading_dau_pt, float& leading_dau_eta,
 			    std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
 			    std::vector<int> &dau_charge, std::vector<int> &dau_ishadronic, int& nmult)
 {
+  leading_dau_pt = leading_dau_eta = 0.0;
   nmult = 0;
   size_t n_dau = jet->Constituents.GetEntries();
   // fill hadronic first
   int nhad = 0;
+  
   for (size_t ic = 0; ic < n_dau; ++ic) {
     double dpt, deta, dphi;
     auto dau = jet->Constituents.At(ic);
@@ -449,6 +478,10 @@ void fillDaughters_HADMERGE(Jet *jet,
     dau_dphi.push_back(dphi);
     nhad++;
     nmult++;
+    if (dpt > leading_dau_pt) {
+      leading_dau_pt = dpt;
+      leading_dau_eta = deta;
+    }
   }
 
   // then fill emag+track
@@ -466,6 +499,10 @@ void fillDaughters_HADMERGE(Jet *jet,
       dau_pt.push_back(dpt);
       dau_deta.push_back(deta);
       dau_dphi.push_back(dphi);
+      if (dpt > leading_dau_pt) {
+	leading_dau_pt = dpt;
+	leading_dau_eta = deta;
+      }
     } else if (auto tower = dynamic_cast<Tower*>(dau)) {
       if (tower->ET < 1.0) { // Don't accept low energy neutrals
 	continue;
@@ -489,6 +526,10 @@ void fillDaughters_HADMERGE(Jet *jet,
 	// if the emag tower within the bounds, add the energy to the hadr. tower
 	if (found) {
 	  dau_pt[ih] += dpt;
+	  if (dau_pt[ih] > leading_dau_pt) {
+	    leading_dau_pt = dau_pt[ih];
+	    leading_dau_eta = dau_deta[ih];
+	  }
 	  break;
 	}
       }
@@ -500,6 +541,10 @@ void fillDaughters_HADMERGE(Jet *jet,
 	dau_pt.push_back(dpt);
 	dau_deta.push_back(deta);
 	dau_dphi.push_back(dphi);
+	if (dpt > leading_dau_pt) {
+	  leading_dau_pt = dpt;
+	  leading_dau_eta = deta;
+	}
       }
     } else {
       std::cout << "BAD DAUGHTER! " << dau << std::endl;
@@ -507,13 +552,14 @@ void fillDaughters_HADMERGE(Jet *jet,
   } 
 }
 
-void fillDaughters(Jet *jet,
+void fillDaughters(Jet *jet, float& leading_dau_pt, float& leading_dau_eta,
 		   std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
 		   std::vector<int> &dau_charge, std::vector<int> &dau_ishadronic, int& nmult, int& cmult)
 {
   size_t n_dau = jet->Constituents.GetEntries();
   double dpt = 0, deta = 0, dphi = 0;
   nmult = cmult = 0;
+  leading_dau_eta = leading_dau_pt = 0;
   for (size_t ic = 0; ic < n_dau; ++ic) {
     auto dau = jet->Constituents.At(ic);
     // Constituents can be a tower (neutral) or a track (charged)
@@ -545,5 +591,9 @@ void fillDaughters(Jet *jet,
     dau_pt.push_back(dpt);
     dau_deta.push_back(deta);
     dau_dphi.push_back(dphi);
+    if (dpt > leading_dau_pt) {
+      leading_dau_pt = dpt;
+      leading_dau_eta = deta;
+    }
   }
 }

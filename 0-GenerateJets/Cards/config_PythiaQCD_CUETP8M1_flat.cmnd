@@ -1,4 +1,4 @@
-Main:numberOfEvents = 20000         ! number of events to generate
+Main:numberOfEvents = 100000         ! number of events to generate
 
 ! https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/QCD_Pt-15To7000_TuneCUETP8M1_Flat_14TeV-pythia8_cff.py
 ! includes commonsettings, cuetp8m1 tune settings and its settings
