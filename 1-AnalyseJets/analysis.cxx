@@ -15,7 +15,7 @@ Double_t minJetPT = 20.0;
 Double_t maxJetEta = 2.4;
 Double_t dRCut = 0.3;
 bool doHadMerge = false;
-bool doEcalCl = true;
+bool doEcalCl = false;
 
 bool debug=false;
 
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
   BranchI(n_dau);
   BranchO(matched);
 
-  bool firstTime = true;
+  bool firstTime = true, badHardGenSeen = false;
   for (size_t iev = 0; iev < intr->GetEntries(); ++iev) {
     intr->GetEntry(iev);
     nEvent = iev;
@@ -155,7 +155,10 @@ int main(int argc, char *argv[])
       }
       if (hardGen.size() == 2) break;
     }
-    if (hardGen.size() != 2) std::cout << "hardGen " << hardGen.size() << std::endl;
+    if (!badHardGenSeen && (hardGen.size() != 2)) {
+      std::cout << "hardGen " << hardGen.size() << std::endl;
+      badHardGenSeen = true;
+    }
     
     for (unsigned j = 0; j < jets->GetEntries(); ++j) {
       auto jet = (Jet*) jets->At(j);
@@ -566,9 +569,9 @@ void fillDaughters(Jet *jet, float& leading_dau_pt, float& leading_dau_eta,
 
     float deta = 10, dphi = 10, dr = 10, dpt = 0;
     if (auto tower = dynamic_cast<Tower*>(dau)) {
-      if (tower->ET < 1.0) { // Don't accept low energy neutrals
-	continue;
-      }
+      // if (tower->ET < 1.0) { // Don't accept low energy neutrals
+      // 	continue;
+      // }
       dpt = tower->ET;
       deta = tower->Eta - jet->Eta;
       dphi = DeltaPhi(tower->Phi, jet->Phi);

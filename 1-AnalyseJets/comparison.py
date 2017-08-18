@@ -6,16 +6,25 @@ def ensure(direc):
         os.system("mkdir -p "+direc)
 
 ROOT.gStyle.SetOptStat(0)
-ROOT.gSystem.Load("../install//Delphes-3.4.1/libDelphes.so")
+ROOT.gSystem.Load("../..//install/Delphes-3.4.1/libDelphes.so")
 # Delphes doesn't output the structure information to the lib for some
 # reason so need to include the header for ROOT to be able to read
 ROOT.gInterpreter.Declare('#include "classes/DelphesClasses.h"')
 
 c = ROOT.TCanvas()
 
-def draw(f, fpi, tcms, direc, cut, lgd):
+def draw(fs, direc, cut, lgd, maxn=None):
     global c
 
+    f, fpi, tcms = fs
+    if maxn is None:
+        maxn = f.jetAnalyser.GetEntries()
+    
+    n=maxn
+    if fpi.jetAnalyser.GetEventList() != ROOT.MakeNullPointer():
+        npi = fpi.jetAnalyser.GetEventList().GetN()
+    else:
+        npi = fpi.jetAnalyser.GetEntries()
     # f.jetAnalyser.Draw("nPriVtxs", str(1.0/n), "", n)
     fpi.jetAnalyser.Draw("nPriVtxs", str(1.0/npi), "")
     tcms.Draw("nPriVtxs", str(1.0/n), "SAME", n)
@@ -124,22 +133,24 @@ def draw(f, fpi, tcms, direc, cut, lgd):
 
 if __name__ == "__main__":
     name = 'Default'
-    fpi = ROOT.TFile("analysis_PythiaQCD_CUETP8M1_flat.root")
+    fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat.root")
+    fpi.jetAnalyser.Draw(">>elist", "matched")
+    fpi.jetAnalyser.SetEventList(ROOT.elist)
 
     # name = 'WPileup'
-    # fpi = ROOT.TFile("analysis_PythiaQCD_CUETP8M1_flat_with_pileup.root")
+    # fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat_with_pileup.root")
 
     # name = 'ECalGang'
-    # fpi = ROOT.TFile("analysis_PythiaQCD_CUETP8M1_flat_ECal_Gang.root")
+    # fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat_ECal_Gang.root")
 
     # name = 'ECalClust'
-    # fpi = ROOT.TFile("analysis_PythiaQCD_CUETP8M1_flat_ECalCluster.root")
+    # fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat_ECalCluster.root")
 
 
-    name = 'ECalClust_wPileup'
-    fpi = ROOT.TFile("analysis_PythiaQCD_CUETP8M1_flat_with_pileup_ECal_Cluster.root")
+    # name = 'ECalClust_wPileup'
+    # fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat_with_pileup_ECal_Cluster.root")
 
-    f = ROOT.TFile("Delphes_CMSJet.root") #  "delphes_QCD2000.root")
+    f = ROOT.TFile("root/Delphes_CMSJet.root") #  "delphes_QCD2000.root")
     fcms = ROOT.TFile("/cms/scratch/gkfthddk/CMSSW_8_0_26/src/jetIdentification/jetAnalyser/test/gkfthddk/jetall.root")
 
     f.jetAnalyser.SetLineColor(ROOT.kRed+2); f.jetAnalyser.SetLineWidth(2)
@@ -153,20 +164,20 @@ if __name__ == "__main__":
     lgd.AddEntry(fpi.jetAnalyser, "Pythia+Delphes "+name)
 
 
-    n = 100000 #  f.jetAnalyser.GetEntries()
-    npi = fpi.jetAnalyser.GetEntries()
+    fs = (f, fpi, tcms)
+    n = 100000
 
     cut = "abs(eta) < 2.4"
     direc = 'comparison/' + name + '/'
     ensure(direc)
-    draw(direc, cut, lgd)
+    draw(fs, direc, cut, lgd, maxn=n)
 
     cut = "abs(eta) < 2.4 && (partonId == 21)"
     direc = 'comparison/' + name + '_gluon/'
     ensure(direc)
-    draw(direc, cut, lgd)
+    draw(fs, direc, cut, lgd, maxn=n)
 
     cut = "abs(eta) < 2.4 && (partonId != 21) && (partonId != 0)"
     direc = 'comparison/' + name + '_quark/'
     ensure(direc)
-    draw(direc, cut, lgd)
+    draw(fs, direc, cut, lgd, maxn=n)
