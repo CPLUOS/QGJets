@@ -44,6 +44,8 @@ struct cluster {
   int ishadronic;
 };
 
+bool isBalanced(TClonesArray * gen_jets);
+
 void fillDaughters(Jet *jet, float &leading_dau_pt, float& leading_dau_eta,
 		   std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
 		   std::vector<int> &dau_charge, std::vector<int> &dau_ishadronic, int& nmult, int& cmult);
@@ -76,6 +78,8 @@ int main(int argc, char *argv[])
   
   TClonesArray *jets = 0;
   intr->SetBranchAddress("Jet", &jets);
+  TClonesArray *gen_jets = 0;
+  intr->SetBranchAddress("GenJet", &gen_jets);
   TClonesArray *particles = 0;
   intr->SetBranchAddress("Particle", &particles);
 
@@ -120,6 +124,7 @@ int main(int argc, char *argv[])
   BranchVI(dau_ishadronic);
   BranchI(n_dau);
   BranchO(matched);
+  BranchO(balanced);
 
   bool firstTime = true, badHardGenSeen = false;
   for (size_t iev = 0; iev < intr->GetEntries(); ++iev) {
@@ -160,7 +165,10 @@ int main(int argc, char *argv[])
       badHardGenSeen = true;
     }
     
+    balanced = isBalanced(gen_jets);
     for (unsigned j = 0; j < jets->GetEntries(); ++j) {
+      if (j >= 2) balanced = false; // only top 2 balanced
+
       auto jet = (Jet*) jets->At(j);
 
       // some cuts, check pt
@@ -275,6 +283,18 @@ int main(int argc, char *argv[])
   
   return 0;
 }
+
+bool isBalanced(TClonesArray * gen_jets)
+{
+  if (gen_jets->GetEntries() > 2) {
+    auto obj1 = (Jet*) gen_jets->At(0);
+    auto obj2 = (Jet*) gen_jets->At(1);
+    auto obj3 = (Jet*) gen_jets->At(2);
+
+    return (obj3->PT < 0.15*(obj2->PT  + obj3->PT));
+  } else return true;
+}
+
 
 void fillDaughter_EcalCluster(Jet *jet, float& leading_dau_pt, float& leading_dau_eta,
 			      std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
