@@ -84,7 +84,9 @@ def draw(fs, direc, cut, lgd, maxn=None):
     lgd.Draw()
     c.Print(direc+"cmult.png")
 
-    tcms.Draw("dau_pt >> (,0,30)", str(1.0/n)+"*("+cut+")", "hist", n)
+    # The CMS jetIdentification code rejects neutrals with pt < 1 GeV
+    # for calculations, but stores them in the dau_* branches (doh!)
+    tcms.Draw("dau_pt >> (,0,30)", str(1.0/n)+"*("+cut+" && ((dau_charge == 0 && dau_pt > 1)||(dau_charge != 0)))", "hist", n)
     f.jetAnalyser.Draw("dau_pt", str(1.0/n)+"*("+cut+")", "hist SAME", n)
     fpi.jetAnalyser.Draw("dau_pt", str(1.0/npi)+"*("+cut+")", "hist SAME")
     ROOT.gROOT.FindObject("c1").FindObject("").GetXaxis().SetTitle("Daughter p_{T} [GeV]")
@@ -92,7 +94,7 @@ def draw(fs, direc, cut, lgd, maxn=None):
     lgd.Draw()
     c.Print(direc+"dau_pt.png")
 
-    cutplus = cut + ' && dau_charge==0'
+    cutplus = cut + ' && dau_charge==0 && dau_pt > 1.'
     tcms.Draw("dau_pt >> (,0,30)", str(1.0/n)+"*("+cutplus+")", "hist", n)
     f.jetAnalyser.Draw("dau_pt", str(1.0/n)+"*("+cutplus+")", "hist SAME", n)
     fpi.jetAnalyser.Draw("dau_pt", str(1.0/npi)+"*("+cutplus+")", "hist SAME")
