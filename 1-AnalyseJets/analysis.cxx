@@ -83,6 +83,11 @@ int main(int argc, char *argv[])
   TClonesArray *particles = 0;
   intr->SetBranchAddress("Particle", &particles);
 
+  TClonesArray *electrons = 0;
+  intr->SetBranchAddress("Electron", &electrons);
+  TClonesArray *muons = 0;
+  intr->SetBranchAddress("Muon", &muons);
+
   TClonesArray *vertices = 0;
   intr->SetBranchAddress("Vertex", &vertices);
   
@@ -99,9 +104,13 @@ int main(int argc, char *argv[])
   BranchI(nJets);
   BranchI(nGoodJets);
   BranchI(nPriVtxs);
+  // Jet is order'th jet by pt ordering
+  BranchI(order);
+
   BranchF(pt);
   BranchF(eta);
   BranchF(phi);
+  
   BranchF(pt_dr_log);
   BranchF(ptD);
   BranchF(axis1);
@@ -126,32 +135,82 @@ int main(int argc, char *argv[])
   BranchO(matched);
   BranchO(balanced);
 
+  BranchO(lepton_overlap);
+  BranchO(pass_Zjets);
+
   bool firstTime = true, badHardGenSeen = false;
   for (size_t iev = 0; iev < intr->GetEntries(); ++iev) {
     intr->GetEntry(iev);
     nEvent = iev;
     nJets = jets->GetEntries();
+    order = 0;
     if (vertices)
       nPriVtxs = vertices->GetEntries();
     else // no pileup mode
       nPriVtxs = 1;
 
     nGoodJets = 0;
+    int iMaxPt = -1;
     for (unsigned k = 0; k < jets->GetEntries(); ++k) {
       auto j = (const Jet *) jets->At(k);
       if (j->PT < minJetPT)
 	continue;
       if (fabs(j->Eta) > maxJetEta)
 	continue;
+      if (iMaxPt < 0) iMaxPt = k;
+      if (((const Jet*) jets->At(iMaxPt))->PT < j->PT)
+	iMaxPt = k;
       
       nGoodJets++;
     }
     
-    // match to hard process in pythia
+    // check for Z event
+    TLorentzVector theDimuon;
+    pass_Zjets = false;
+    for (unsigned k = 0; k < muons->GetEntries(); ++k) {
+      if (iMaxPt < 0) break;
+      auto mu = (Muon*) muons->At(k);      
+      for (unsigned kk = k; kk < muons->GetEntries(); ++kk) {
+	auto mu2 = (Muon*) muons->At(kk);
+	if (mu->Charge*mu2->Charge > 0) continue;
+	auto dimuon = (mu->P4() + mu2->P4());
+	if (dimuon.M() < 60 || dimuon.M() > 120) continue;
+	pass_Zjets = true;
+	theDimuon = dimuon;
+      }
+    }
+    for (unsigned k = 0; k < electrons->GetEntries(); ++k) {
+      if (iMaxPt < 0) break;
+      auto mu = (Electron*) electrons->At(k);      
+      for (unsigned kk = k; kk < electrons->GetEntries(); ++kk) {
+	auto mu2 = (Electron*) electrons->At(kk);
+	if (mu->Charge*mu2->Charge > 0) continue;
+	auto dimuon = (mu->P4() + mu2->P4());
+	if (dimuon.M() < 60 || dimuon.M() > 120) continue;
+	pass_Zjets = true;
+	theDimuon = dimuon;
+      }
+    }
+
+    if (pass_Zjets) {
+      auto j = (const Jet *) jets->At(iMaxPt);
+      // require them to be back to back
+      if (DeltaPhi(j->Phi, theDimuon.Phi()) < 2.5)
+      	pass_Zjets = false;
+      for (unsigned k = 0; k < jets->GetEntries(); ++k) {
+    	if (k == iMaxPt) continue;
+    	auto j = (const Jet *) jets->At(k);
+    	if (j->PT > 0.3*theDimuon.Pt())
+    	  pass_Zjets = false;
+      }
+    }
+    
     std::vector<const GenParticle*> hardGen;
     for (unsigned k = 0; k < particles->GetEntries(); ++k) {
       auto p = (const GenParticle *) particles->At(k);
       if (p->Status != 23) continue; // Status 23 is hard process parton in Pythia8
+      //if (p->Status < 20 || p->Status > 29) continue; // All 20s are hard processes (not all of them make sense but this is how QGL does it)
+
       if (abs(p->PID) > 5 && p->PID != 21) continue; // consider quarks and gluons only
       hardGen.push_back(p);
       if (firstTime) {
@@ -164,9 +223,12 @@ int main(int argc, char *argv[])
       std::cout << "hardGen " << hardGen.size() << std::endl;
       badHardGenSeen = true;
     }
-    
+
     balanced = isBalanced(gen_jets);
+    // std::cout << "EV ";
+    //   std::cout << "hardGen " << hardGen[0]->PID << " " << hardGen[1]->PID << " " << " " << hardGen[0]->PT << " " << hardGen[1]->PT << " | " << hardGen[0]->Eta << " " << hardGen[1]->Eta << " | " << " " << hardGen[0]->Phi << " " << hardGen[1]->Phi << std::endl;
     for (unsigned j = 0; j < jets->GetEntries(); ++j) {
+      lepton_overlap = false;
       if (j >= 2) balanced = false; // only top 2 balanced
 
       auto jet = (Jet*) jets->At(j);
@@ -187,6 +249,7 @@ int main(int argc, char *argv[])
       	}
       }
       // if (!matched) continue;
+      // std::cout << "hardGen " << hardGen[0]->PID << " " << hardGen[1]->PID << " " << matched << " " << jet->PT << " " << hardGen[0]->PT << " " << hardGen[1]->PT << " | " << jet->Eta << " " << hardGen[0]->Eta << " " << hardGen[1]->Eta << " | " << " " << jet->Phi << " " << hardGen[0]->Phi << " " << hardGen[1]->Phi << std::endl;
       
       // check overlapping jets
       bool overlap = false;
@@ -197,6 +260,18 @@ int main(int argc, char *argv[])
 	if (dR < dRCut) overlap = true;
       }
       if (overlap) continue;
+
+      // check overlap with lepton
+      for (unsigned k = 0; k < electrons->GetEntries(); ++k) {
+	auto ele = (Electron*) electrons->At(k);
+	float dR = DeltaR(jet->Eta - ele->Eta, DeltaPhi(jet->Phi, ele->Phi));
+	if (dR < dRCut) lepton_overlap = true;
+      }
+      for (unsigned k = 0; k < muons->GetEntries(); ++k) {
+	auto mu = (Muon*) muons->At(k);
+	float dR = DeltaR(jet->Eta - mu->Eta, DeltaPhi(jet->Phi, mu->Phi));
+	if (dR < dRCut) lepton_overlap = true;
+      }
 
       pt = jet->PT;
       eta = jet->Eta;
@@ -269,11 +344,12 @@ int main(int argc, char *argv[])
 	axis2 = (a+b-delta > 0) ? sqrt(0.5*(a+b-delta)) : 0;
       }
 
-      axis1 = -std::log(axis1);
-      axis2 = -std::log(axis2);
+      // axis1 = -std::log(axis1);
+      // axis2 = -std::log(axis2);
 
       n_dau = dau_pt.size();
 
+      order++;
       outtr->Fill();
     }
   }

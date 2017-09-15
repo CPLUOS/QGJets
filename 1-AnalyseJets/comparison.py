@@ -136,8 +136,9 @@ def draw(fs, direc, cut, lgd, maxn=None):
 if __name__ == "__main__":
     name = 'Default'
     fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat.root")
-    fpi.jetAnalyser.Draw(">>elist", "matched")
-    fpi.jetAnalyser.SetEventList(ROOT.elist)
+
+    name = 'Status20s'
+    fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat__Status20s.root")
 
     # name = 'WPileup'
     # fpi = ROOT.TFile("root/PythiaQCD_CUETP8M1_flat_with_pileup.root")

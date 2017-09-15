@@ -17,60 +17,55 @@ if False:
     outf = ROOT.TFile("tmva_CMS.root", 'recreate')
     extr = ""
     dataname = 'CMS'
+    ntrain = 20000
+    ntest = 5000
 else:
-    f = ROOT.TFile("AnalyseRoot/PythiaQCD_CUETP8M1_flat.root")
-    outf = ROOT.TFile("root/TMVA_PythiaQCD_CUETP8M1_flat.root", 'recreate')
-    extr = ' && pt > 100'
-    dataname = 'delphes'
-
-# ntrain = 100000
-# ntest = 30000
-
-#ntrain = 100000
-#ntest = 20000
-
-ntrain = 50000
-ntest = 10000
+    ggf = ROOT.TFile("AnalyseRoot/pp_gg_cuep8m1.root")
+    qqf = ROOT.TFile("AnalyseRoot/pp_qq_cuep8m1.root")
+    outf = ROOT.TFile("root/pp_xx_cuep8m1.root", "recreate")
+    extr = " && (order==1 || order==2) && balanced && n_dau > 1"
+    dataname = "delphes"
+    ntrain = 8100
+    ntest = 1000
 
 # ---- 
 
 fac = ROOT.TMVA.Factory("TMVAClassification", outf, '!V:!Silent:Color:AnalysisType=Classification') # :Transformations=I;D;P;G;D')
-# dl = ROOT.TMVA.DataLoader(dataname)
+dl = ROOT.TMVA.DataLoader(dataname)
 
-# In newer root versions, you need to use the DataLoader Class here
-
-fac.AddVariable("cmult", 'I')
-fac.AddVariable("nmult", 'I')
-# fac.AddVariable("mult", 'I')
-
-fac.AddVariable("axis1", 'F')
-fac.AddVariable("axis2", 'F')
-fac.AddVariable("ptD", 'F')
-fac.AddVariable("pt_dr_log", 'F')
-
+dl.AddVariable("cmult", 'I')
+dl.AddVariable("nmult", 'I')
+# dl.AddVariable("mult", 'I')
+dl.AddVariable("axis1", 'F')
+dl.AddVariable("axis2", 'F')
+dl.AddVariable("ptD", 'F')
+dl.AddVariable("pt_dr_log", 'F')
 # dl.AddVariable("eta", 'F')
 # dl.AddVariable("pt", 'F')
 
-if type(f.jetAnalyser) == ROOT.TDirectoryFile:
-    fac.AddSignalTree(f.jetAnalyser.Get("jetAnalyser"))
-    fac.AddBackgroundTree(f.jetAnalyser.Get("jetAnalyser"))
+if type(ggf.jetAnalyser) == ROOT.TDirectoryFile:
+    dl.AddSignalTree(f.jetAnalyser.Get("jetAnalyser"))
+    dl.AddBackgroundTree(f.jetAnalyser.Get("jetAnalyser"))
 else:
-    fac.AddSignalTree(f.Get("jetAnalyser"))
-    fac.AddBackgroundTree(f.Get("jetAnalyser"))
+    dl.AddSignalTree(ggf.Get("jetAnalyser"))
+    dl.AddBackgroundTree(qqf.Get("jetAnalyser"))
 
 idVar = 'partonId'
 idVar = 'flavorId'
-    
+
 scut = ROOT.TCut(""+idVar+" != 0 && "+idVar+"==21 && axis2 < 1000" + extr)
 bcut = ROOT.TCut(""+idVar+" != 0 && "+idVar+"!=21 && axis2 < 1000" + extr)
 
-fac.PrepareTrainingAndTestTree(scut, bcut, "nTrain_Signal={0}:nTrain_Background={0}:nTest_Signal={1}:nTest_Background={1}:SplitMode=Random:NormMode=NumEvents:!V".format(ntrain, ntest))
+scut = ROOT.TCut(""+"axis2 < 1000" + extr)
+bcut = ROOT.TCut(""+"axis2 < 1000" + extr)
 
-fac.BookMethod(ROOT.TMVA.Types.kBDT, "BDT", "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20")
+dl.PrepareTrainingAndTestTree(scut, bcut, "nTrain_Signal={0}:nTrain_Background={0}:nTest_Signal={1}:nTest_Background={1}:SplitMode=Random:NormMode=NumEvents:!V".format(ntrain, ntest))
+
+fac.BookMethod(dl, ROOT.TMVA.Types.kBDT, "BDT", "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20")
 # fac.BookMethod(dl, ROOT.TMVA.Types.kSVM, "SVM", "Gamma=0.25:Tol=0.001:VarTransform=Norm")
-fac.BookMethod(ROOT.TMVA.Types.kFisher, "Fisher", "H:!V:Fisher:VarTransform=None:CreateMVAPdfs:PDFInterpolMVAPdf=Spline2:NbinsMVAPdf=50:NsmoothMVAPdf=10")
+fac.BookMethod(dl, ROOT.TMVA.Types.kFisher, "Fisher", "H:!V:Fisher:VarTransform=None:CreateMVAPdfs:PDFInterpolMVAPdf=Spline2:NbinsMVAPdf=50:NsmoothMVAPdf=10")
 # fac.BookMethod(ROOT.TMVA.Types.kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:!UseRegulator")
-fac.BookMethod(ROOT.TMVA.Types.kLikelihood, "Likelihood", "H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=1000")
+fac.BookMethod(dl, ROOT.TMVA.Types.kLikelihood, "Likelihood", "H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=1000")
 
 fac.TrainAllMethods()
 fac.TestAllMethods()
@@ -79,24 +74,24 @@ fac.EvaluateAllMethods()
 outf.Write()
 outf.Close()
 
-ROOT.TMVA.correlations(outf.GetName())
-ROOT.TMVA.variables(outf.GetName())
-ROOT.TMVA.mvas(outf.GetName(), ROOT.TMVA.kMVAType)
-ROOT.TMVA.mvas(outf.GetName(), ROOT.TMVA.kCompareType)
-ROOT.TMVA.mvas(outf.GetName(), ROOT.TMVA.kProbaType)
-ROOT.TMVA.mvas(outf.GetName(), ROOT.TMVA.kRarityType)
+ROOT.TMVA.correlations(dataname, outf.GetName())
+ROOT.TMVA.variables(dataname, outf.GetName())
+ROOT.TMVA.mvas(dataname, outf.GetName(), ROOT.TMVA.kMVAType)
+ROOT.TMVA.mvas(dataname, outf.GetName(), ROOT.TMVA.kCompareType)
+ROOT.TMVA.mvas(dataname, outf.GetName(), ROOT.TMVA.kProbaType)
+ROOT.TMVA.mvas(dataname, outf.GetName(), ROOT.TMVA.kRarityType)
 # ROOT.TMVA.mvaeffs(outf.GetName())
 ROOT.TMVA.efficiencies(outf.GetName())
 ROOT.TMVA.efficiencies(outf.GetName(), 3)
 
-ROOT.gROOT.ProcessLine(".L ROCCurve.C+")
+# ROOT.gROOT.ProcessLine(".L ROCCurve.C+")
 
 outf = ROOT.TFile(outf.GetName())
 mvaBDT = ROOT.vector('float')()
 #mvaMLP = ROOT.vector('float')()
 mvaFis = ROOT.vector('float')()
 mvaT = ROOT.vector('bool')()
-for ev in outf.TrainTree:
+for ev in outf.Get(dataname+"/TrainTree"):
     mvaBDT.push_back(ev.BDT)
 #    mvaMLP.push_back(ev.MLP)
     mvaFis.push_back(ev.Fisher)

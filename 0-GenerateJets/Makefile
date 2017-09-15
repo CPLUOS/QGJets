@@ -23,3 +23,6 @@ DelphesCMSFWLite : DelphesCMSFWLite.cpp
 
 clean :
 	rm -rf $(ALL)
+
+clean_pp :
+	rm -rf root/pp_*root MG5/pp_*
