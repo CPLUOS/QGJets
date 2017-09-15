@@ -6,3 +6,6 @@
 *pcm
 *log
 *pileup
+*.so
+*.d
+*.pyc
