@@ -367,7 +367,7 @@ bool isBalanced(TClonesArray * gen_jets)
     auto obj2 = (Jet*) gen_jets->At(1);
     auto obj3 = (Jet*) gen_jets->At(2);
 
-    return (obj3->PT < 0.15*(obj2->PT  + obj3->PT));
+    return (obj3->PT < 0.15*(obj2->PT  + obj1->PT));
   } else return true;
 }
 
