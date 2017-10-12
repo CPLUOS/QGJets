@@ -2,7 +2,7 @@
 
 LC_ALL=C
 
-NAME=pp_qq
+NAME=pp_zg
 
 singularity run $HOME/Images/Herwig.img read $NAME.in
 singularity run $HOME/Images/Herwig.img run -N 10000 $NAME.run
