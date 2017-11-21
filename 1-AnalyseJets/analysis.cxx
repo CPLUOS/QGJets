@@ -59,13 +59,32 @@ void fillDaughter_EcalCluster(Jet *jet, float &leading_dau_pt, float& leading_da
 
 int main(int argc, char *argv[])
 {
-  if (argc != 3) {
-    std::cout << "Require input and output root file" << std::endl;
+  int c;
+  while ((c = getopt(argc, argv, "eh")) != -1) {
+    switch (c) {
+    case 'e':
+      doEcalCl = true;
+      std::cout << "ECAL clustering turned on" << std::endl;
+      break;
+    case 'h':
+      doHadMerge = true;
+      std::cout << "Hadronic merging turned on" << std::endl;
+      break;
+    case '?':
+      std::cout << "Bad Option: " << optopt << std::endl;
+      exit(12);
+    }
+  }
+
+  if ((argc - optind) != 2) {
+    std::cout << "Requires input and output root file. Optional -e flag turns on ecal clustering, -h flag turns on hadronic merging" << std::endl;
     return 1;
   }
 
-  auto in = string{argv[1]};
-  auto out = string{argv[2]};
+  auto in = string{argv[optind]};
+  auto out = string{argv[optind+1]};
+
+  std::cout << "Processing '" << in << "' into '" << out << "'" << std::endl;
 
   auto inf = TFile::Open(in.c_str());
   auto intr = (TTree*) inf->Get("Delphes");
