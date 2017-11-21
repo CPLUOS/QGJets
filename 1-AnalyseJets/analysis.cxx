@@ -45,6 +45,7 @@ struct cluster {
 };
 
 bool isBalanced(TClonesArray * gen_jets);
+bool passZjets(TClonesArray * jets, TClonesArray * muons, TClonesArray * electrons, int &nGoodJets);
 
 void fillDaughters(Jet *jet, float &leading_dau_pt, float& leading_dau_eta,
 		   std::vector<float> &dau_pt, std::vector<float> &dau_deta, std::vector<float> &dau_dphi,
@@ -167,62 +168,8 @@ int main(int argc, char *argv[])
       nPriVtxs = vertices->GetEntries();
     else // no pileup mode
       nPriVtxs = 1;
-
-    nGoodJets = 0;
-    int iMaxPt = -1;
-    for (unsigned k = 0; k < jets->GetEntries(); ++k) {
-      auto j = (const Jet *) jets->At(k);
-      if (j->PT < minJetPT)
-	continue;
-      if (fabs(j->Eta) > maxJetEta)
-	continue;
-      if (iMaxPt < 0) iMaxPt = k;
-      if (((const Jet*) jets->At(iMaxPt))->PT < j->PT)
-	iMaxPt = k;
-      
-      nGoodJets++;
-    }
     
-    // check for Z event
-    TLorentzVector theDimuon;
-    pass_Zjets = false;
-    for (unsigned k = 0; k < muons->GetEntries(); ++k) {
-      if (iMaxPt < 0) break;
-      auto mu = (Muon*) muons->At(k);      
-      for (unsigned kk = k; kk < muons->GetEntries(); ++kk) {
-	auto mu2 = (Muon*) muons->At(kk);
-	if (mu->Charge*mu2->Charge > 0) continue;
-	auto dimuon = (mu->P4() + mu2->P4());
-	if (dimuon.M() < 60 || dimuon.M() > 120) continue;
-	pass_Zjets = true;
-	theDimuon = dimuon;
-      }
-    }
-    for (unsigned k = 0; k < electrons->GetEntries(); ++k) {
-      if (iMaxPt < 0) break;
-      auto mu = (Electron*) electrons->At(k);      
-      for (unsigned kk = k; kk < electrons->GetEntries(); ++kk) {
-	auto mu2 = (Electron*) electrons->At(kk);
-	if (mu->Charge*mu2->Charge > 0) continue;
-	auto dimuon = (mu->P4() + mu2->P4());
-	if (dimuon.M() < 60 || dimuon.M() > 120) continue;
-	pass_Zjets = true;
-	theDimuon = dimuon;
-      }
-    }
-
-    if (pass_Zjets) {
-      auto j = (const Jet *) jets->At(iMaxPt);
-      // require them to be back to back
-      if (DeltaPhi(j->Phi, theDimuon.Phi()) < 2.5)
-      	pass_Zjets = false;
-      for (unsigned k = 0; k < jets->GetEntries(); ++k) {
-    	if (k == iMaxPt) continue;
-    	auto j = (const Jet *) jets->At(k);
-    	if (j->PT > 0.3*theDimuon.Pt())
-    	  pass_Zjets = false;
-      }
-    }
+    pass_Zjets = passZjets(gen_jets, muons, electrons, nGoodJets);
     
     std::vector<const GenParticle*> hardGen;
     for (unsigned k = 0; k < particles->GetEntries(); ++k) {
@@ -243,7 +190,7 @@ int main(int argc, char *argv[])
       badHardGenSeen = true;
     }
 
-    balanced = isBalanced(gen_jets);
+    balanced = isBalanced(jets);
     // std::cout << "EV ";
     //   std::cout << "hardGen " << hardGen[0]->PID << " " << hardGen[1]->PID << " " << " " << hardGen[0]->PT << " " << hardGen[1]->PT << " | " << hardGen[0]->Eta << " " << hardGen[1]->Eta << " | " << " " << hardGen[0]->Phi << " " << hardGen[1]->Phi << std::endl;
     for (unsigned j = 0; j < jets->GetEntries(); ++j) {
@@ -379,15 +326,97 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-bool isBalanced(TClonesArray * gen_jets)
+/* Is the event balanced according to the criteria of pg 13 of http://cds.cern.ch/record/2256875/files/JME-16-003-pas.pdf */
+bool isBalanced(TClonesArray * jets)
 {
-  if (gen_jets->GetEntries() > 2) {
-    auto obj1 = (Jet*) gen_jets->At(0);
-    auto obj2 = (Jet*) gen_jets->At(1);
-    auto obj3 = (Jet*) gen_jets->At(2);
+  if (jets->GetEntries() < 2) return false;
 
-    return (obj3->PT < 0.15*(obj2->PT  + obj1->PT));
+  auto obj1 = (Jet*) jets->At(0);
+  auto obj2 = (Jet*) jets->At(1);
+
+  // 2 jets of 30 GeV
+  if (obj1->PT < 30.0) return false;
+  if (obj2->PT < 30.0) return false;
+  // that are back-to-back
+  if (obj1->P4().DeltaPhi(obj2->P4()) < 2.5) return false;
+
+  // and any 3rd jet requires pt < 30% of the avg. of the 2 leading jets
+  if (jets->GetEntries() > 2) {
+    auto obj3 = (Jet*) jets->At(2);
+    return (obj3->PT < 0.3*(0.5*(obj2->PT  + obj1->PT)));
   } else return true;
+}
+
+/* Does the event pass the Zjets criteria according to the criteria of pg 11-12 of http://cds.cern.ch/record/2256875/files/JME-16-003-pas.pdf */
+bool passZjets(TClonesArray * jets, TClonesArray * muons, TClonesArray * electrons, int &nGoodJets)
+{
+  bool pass_Zjets = false;
+
+  if (jets->GetEntries() < 1) return false;
+
+
+  nGoodJets = 0;
+  int iMaxPt = -1;
+  for (unsigned k = 0; k < jets->GetEntries(); ++k) {
+    auto j = (const Jet *) jets->At(k);
+    if (j->PT < minJetPT)
+      continue;
+    if (fabs(j->Eta) > maxJetEta)
+      continue;
+    if (iMaxPt < 0) iMaxPt = k;
+    if (((const Jet*) jets->At(iMaxPt))->PT < j->PT)
+      iMaxPt = k;
+    
+    nGoodJets++;
+  }
+  if (iMaxPt < 0) return false;
+
+  // check for Z event
+  TLorentzVector theDimuon;
+  for (unsigned k = 0; k < muons->GetEntries(); ++k) {
+    if (iMaxPt < 0) break;
+    auto mu = (Muon*) muons->At(k);
+    if (mu->PT < 20.) continue;
+    for (unsigned kk = k; kk < muons->GetEntries(); ++kk) {
+      auto mu2 = (Muon*) muons->At(kk);
+      if (mu2->PT < 20.) continue;
+      if (mu->Charge*mu2->Charge > 0) continue;
+      auto dimuon = (mu->P4() + mu2->P4());
+      if (dimuon.M() < 70. || dimuon.M() > 110.) continue;
+      pass_Zjets = true;
+      theDimuon = dimuon;
+    }
+  }
+
+  // The paper doesn't consider the electron channel
+  
+  // for (unsigned k = 0; k < electrons->GetEntries(); ++k) {
+  //   if (iMaxPt < 0) break;
+  //   auto mu = (Electron*) electrons->At(k);      
+  //   for (unsigned kk = k; kk < electrons->GetEntries(); ++kk) {
+  //     auto mu2 = (Electron*) electrons->At(kk);
+  //     if (mu->Charge*mu2->Charge > 0) continue;
+  //     auto dimuon = (mu->P4() + mu2->P4());
+  //     if (dimuon.M() < 60 || dimuon.M() > 120) continue;
+  //     pass_Zjets = true;
+  //     theDimuon = dimuon;
+  //   }
+  // }
+
+  if (pass_Zjets) {
+    auto j = (const Jet *) jets->At(iMaxPt);
+    // require them to be back to back
+    if (DeltaPhi(j->Phi, theDimuon.Phi()) < 2.5)
+      pass_Zjets = false;
+    for (unsigned k = 0; k < jets->GetEntries(); ++k) {
+      if (k == iMaxPt) continue;
+      auto j = (const Jet *) jets->At(k);
+      if (j->PT > 0.3*theDimuon.Pt())
+	pass_Zjets = false;
+    }
+  }
+
+  return pass_Zjets;
 }
 
 
