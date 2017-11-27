@@ -153,6 +153,7 @@ int main(int argc, char *argv[])
   BranchI(flavorAlgoId);
   BranchI(flavorPhysId);
 
+#ifdef WOOJIN_VARIABLES
   // BDT (woojin) variables
   BranchF(GeoMoment);
   BranchF(HalfPtMoment);
@@ -242,8 +243,7 @@ int main(int argc, char *argv[])
   BranchVF(MRKF_NC);
   BranchVF(MRKF_NN);
 
-
-
+#endif
 
   BranchVF(dau_pt);
   BranchVF(dau_deta);
@@ -352,6 +352,7 @@ int main(int argc, char *argv[])
       flavorAlgoId = jet->FlavorAlgo;
       flavorPhysId = jet->FlavorPhys;
 
+#ifdef WOOJIN_VARIABLES
       ptDoubleCone = 0;
       GeoMoment = 0;
       HalfPtMoment = 0;
@@ -437,6 +438,7 @@ int main(int argc, char *argv[])
       MRKF_NC.clear();
       MRKF_NN.clear();
 
+#endif
 
 
       axis1 = 0; axis2 = 0;
@@ -456,6 +458,7 @@ int main(int argc, char *argv[])
       else
 	fillDaughters(jet, leading_dau_pt, leading_dau_eta, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult, cmult);
 
+#ifdef WOOJIN_VARIABLES
         // charged dau pt sum
       for (size_t a = 0; a < dau_pt.size(); ++ a) {
         auto dau_a = jet->Constituents.At(a);
@@ -615,7 +618,7 @@ int main(int argc, char *argv[])
         MRKF_NN.push_back(sum_MRKF_NN);
       }
 
-
+#endif
 
       float sum_weight = 0;
       float sum_pt = 0;
@@ -639,6 +642,7 @@ int main(int argc, char *argv[])
 	sum_dphi2 += dphi*dphi*weight;
 	sum_detadphi += deta*dphi*weight;
 
+#ifdef WOOJIN_VARIABLES
         GeoMoment += (powf((dpt/pt),1))*(powf((dr/dRCut),1));
         HalfPtMoment += (powf((dpt/pt),1.5))*(powf((dr/dRCut),0));
         DRSquareMoment += (powf((dpt/pt),0))*(powf((dr/dRCut),2));
@@ -714,8 +718,9 @@ int main(int argc, char *argv[])
             }
           }
         }
-      }
+#endif
 
+      }
       float a = 0, b = 0, c = 0;
       if (sum_weight > 0) {
 	ptD = TMath::Sqrt(sum_weight) / sum_pt;
