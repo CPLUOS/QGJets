@@ -32,7 +32,7 @@ def dense_block(x, units, act_fn="relu"):
     x = Activation(act_fn)(x)
     return x
 
-def build_a_graph(input0_shape, input1_shape):
+def build_a_model(input0_shape, input1_shape):
     # Input features
     input_daus = Input(input0_shape, name="daugther_feature")
     input_glob = Input(input1_shape, name="global_feature")

@@ -30,3 +30,5 @@ def add_an_sigmoid_layer(model, name=None):
     sig.add(model)
     sig.add(Activation("sigmoid", name="predictions"))
     return sig
+
+

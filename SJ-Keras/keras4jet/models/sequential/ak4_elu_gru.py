@@ -32,36 +32,32 @@ def dense_block(x, units, act_fn="relu"):
     x = Activation(act_fn)(x)
     return x
 
-def build_a_graph(input0_shape, input1_shape):
-    """
-    input0_shape: x_daus_shape
-    input1_shape: x_glob_shape
-    """
+def build_a_model(input0_shape, input1_shape):
     # Input features
-    input_daus = Input(input0_shape)
-    input_glob = Input(input1_shape)
+    input_daus = Input(input0_shape, name="daugther_feature")
+    input_glob = Input(input1_shape, name="global_feature")
 
     # 1x1 Conv Block
     # Conv1D(filters, kernel_size, strides, padding, dilation_rate, activation
-    x = preact_block(input_daus, 128)
-    x = preact_block(x, 96)
-    x = preact_block(x, 80)
-    x = preact_block(x, 20)
+    x = preact_block(input_daus, 128, "elu")
+    x = preact_block(x, 96, "elu")
+    x = preact_block(x, 80, "elu")
+    x = preact_block(x, 20, "elu")
     
     # Recurrent layer
-    x = LSTM(units=150)(x)
+    x = GRU(units=150)(x)
 
     # concat
     x = Concatenate()([x, input_glob])
 
     # Dense Block
-    x = dense_block(x, 200)
-    x = dense_block(x, 100)
-    x = dense_block(x, 100)
-    x = dense_block(x, 100)
-    x = dense_block(x, 100)
-    x = dense_block(x, 100)
-    x = dense_block(x, 100)
+    x = dense_block(x, 200, "elu")
+    x = dense_block(x, 100, "elu")
+    x = dense_block(x, 100, "elu")
+    x = dense_block(x, 100, "elu")
+    x = dense_block(x, 100, "elu")
+    x = dense_block(x, 100, "elu")
+    x = dense_block(x, 100, "elu")
 
     # Output: logit
     logit = Dense(units=1)(x)
@@ -70,6 +66,6 @@ def build_a_graph(input0_shape, input1_shape):
     model = Model(
         inputs=[input_daus, input_glob],
         outputs=logit,
-        name="AK4Net")
+        name="AK4EluGRU")
     return model
 
