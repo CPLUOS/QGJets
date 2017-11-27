@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
     else // no pileup mode
       nPriVtxs = 1;
     
-    pass_Zjets = passZjets(gen_jets, muons, electrons, nGoodJets);
+    pass_Zjets = passZjets(jets, muons, electrons, nGoodJets);
     
     std::vector<const GenParticle*> hardGen;
     for (unsigned k = 0; k < particles->GetEntries(); ++k) {
