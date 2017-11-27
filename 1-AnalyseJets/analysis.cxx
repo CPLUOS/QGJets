@@ -11,7 +11,7 @@
 
 using std::string;
 
-Double_t minJetPT = 20.0;
+Double_t minJetPT = 100.0;
 Double_t maxJetEta = 2.4;
 Double_t dRCut = 0.3;
 bool doHadMerge = false;
