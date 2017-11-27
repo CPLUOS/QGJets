@@ -462,13 +462,10 @@ int main(int argc, char *argv[])
         // charged dau pt sum
       for (size_t a = 0; a < dau_pt.size(); ++ a) {
         auto dau_a = jet->Constituents.At(a);
-        auto tower_a = dynamic_cast<Tower*>(dau_a);
-        if (!tower_a) {
-          auto track_a = dynamic_cast<Track*>(dau_a);
-          if (track_a) {
-            sum_track_pt += track_a->PT;
-          }
-        }
+	auto track_a = dynamic_cast<Track*>(dau_a);
+	if (track_a) {
+	  sum_track_pt += track_a->PT;
+	}
       }
       
         // radial distance of daugther farthest from the jet
@@ -671,53 +668,42 @@ int main(int argc, char *argv[])
         weighted_outerring = outerring/drmax;
 
         auto dau_ic = jet->Constituents.At(ic);
-        auto tower_ic = dynamic_cast<Tower*>(dau_ic);
-        if (!tower_ic) {
-          auto track_ic = dynamic_cast<Track*>(dau_ic);
-          if (track_ic) {
-            if (dr < 0.1 && dr > 0.) {
-              inner_charged_GeoMoment_0_1 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < 0.2 && dr > 0.1) {
-              inner_charged_GeoMoment_1_2 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < 0.3 && dr > 0.2) {
-              inner_charged_GeoMoment_2_3 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < 0.4 && dr > 0.3) {
-              inner_charged_GeoMoment_3_4 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < dRCut*2 && dr > 0.4) {
-              outer_charged_GeoMoment += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-
-            for (size_t i = 0; i < dau_pt.size(); ++i) {
-              auto dau_i = jet->Constituents.At(i);
-              auto tower_i = dynamic_cast<Tower*>(dau_i);
-              if (!tower_i) {
-                auto track_i = dynamic_cast<Track*>(dau_i);
-                if (track_i) {
-                  if (ic >= i) {
-                  continue;
-                  }
-                  if (ic < i) {
-                    ang_EEC_beta_0 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0))/(sum_track_pt);
-                    ang_EEC_beta_1 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.1))/(sum_track_pt);
-                    ang_EEC_beta_2 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.2))/(sum_track_pt);
-                    ang_EEC_beta_3 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.3))/(sum_track_pt);
-                    ang_EEC_beta_4 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.4))/(sum_track_pt);
-                    ang_EEC_beta_5 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.5))/(sum_track_pt);
-                    ang_EEC_beta_6 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.6))/(sum_track_pt);
-                    ang_EEC_beta_7 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.7))/(sum_track_pt);
-                    ang_EEC_beta_8 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.8))/(sum_track_pt);
-                    ang_EEC_beta_9 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.9))/(sum_track_pt);
-                    ang_EEC_beta_10 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 1.0))/(sum_track_pt);
-                  }
-                }
-              }
-            }
-          }
-        }
+	auto track_ic = dynamic_cast<Track*>(dau_ic);
+	if (track_ic) {
+	  if (dr < 0.1 && dr > 0.) {
+	    inner_charged_GeoMoment_0_1 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < 0.2 && dr > 0.1) {
+	    inner_charged_GeoMoment_1_2 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < 0.3 && dr > 0.2) {
+	    inner_charged_GeoMoment_2_3 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < 0.4 && dr > 0.3) {
+	    inner_charged_GeoMoment_3_4 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < dRCut*2 && dr > 0.4) {
+	    outer_charged_GeoMoment += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  
+	  for (size_t i = ic+1; i < dau_pt.size(); ++i) {
+	    auto dau_i = jet->Constituents.At(i);
+	    auto track_i = dynamic_cast<Track*>(dau_i);
+	    if (track_i) {
+	      ang_EEC_beta_0 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0))/(sum_track_pt);
+	      ang_EEC_beta_1 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.1))/(sum_track_pt);
+	      ang_EEC_beta_2 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.2))/(sum_track_pt);
+	      ang_EEC_beta_3 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.3))/(sum_track_pt);
+	      ang_EEC_beta_4 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.4))/(sum_track_pt);
+	      ang_EEC_beta_5 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.5))/(sum_track_pt);
+	      ang_EEC_beta_6 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.6))/(sum_track_pt);
+	      ang_EEC_beta_7 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.7))/(sum_track_pt);
+	      ang_EEC_beta_8 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.8))/(sum_track_pt);
+	      ang_EEC_beta_9 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.9))/(sum_track_pt);
+	      ang_EEC_beta_10 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 1.0))/(sum_track_pt);
+	    }
+	  }
+	}
 #endif
 
       }
