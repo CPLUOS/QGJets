@@ -63,13 +63,13 @@ def build_a_model(input0_shape, input1_shape):
     x = dense_block(x, 100)
     x = dense_block(x, 100)
 
-    # Output: logit
-    logit = Dense(units=1)(x)
+    # Output: softmax
+    softmax = Dense(units=1)(x)
 
     # Create model.
     model = Model(
         inputs=[input_daus, input_glob],
-        outputs=logit,
+        outputs=softmax,
         name="AK4Net")
     return model
 

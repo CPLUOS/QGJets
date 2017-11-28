@@ -27,7 +27,6 @@ from models import build_a_model
 
 sys.path.append("..")
 from keras4jet.models.image.resnet
-from keras4jet.losses import binary_cross_entropy_with_logits
 from keras4jet.meters import Meter
 from keras4jet.utils import (
     get_log_dir,
@@ -101,7 +100,7 @@ def main():
         cyclic=True)
 
 
-    loss = binary_cross_entropy_with_logits
+    loss = 'binary_crossentropy'
     optimizer = optimizers.Adam(lr=args.lr)
     metric_list = ['accuracy']
 
@@ -116,8 +115,7 @@ def main():
     model.compile(
         loss=loss,
         optimizer=optimizer,
-        metrics=metric_list
-    )
+        metrics=metric_list)
 
 
     # Meter
