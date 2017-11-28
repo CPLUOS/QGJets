@@ -22,7 +22,7 @@ const float kDPhiMax = 0.4;
 
 const TString kTreeName = "jet";
 
-const TString kOutputDir = "$JET/Data/image33x33";
+const TString kOutputDir = "image33x33";
 //////////////////////////////////////////////////////////
 
 bool IsNotZero(int i) {return i!=0;}
@@ -214,6 +214,24 @@ TString PrepTrainData(TString const& input_path)
     TString output_path = gSystem->ConcatFileName(kOutputDir, output_name);
 
     TFile* output_file = new TFile(output_path, "RECREATE");
+    output_file->mkdir("variables");
+    output_file->mkdir("images");
+    // variables
+    output_file->Cd("/variables");
+    TVectorD cmult(1), nmult(1), ptD(1), axis1(1), axis2(1);
+    cmult[0] = var_mean[0]; cmult.Write("cmult");
+    nmult[0] = var_mean[1]; nmult.Write("nmult");
+    ptD[0]   = var_mean[2]; ptD.Write("ptD");
+    axis1[0] = var_mean[3]; axis1.Write("axis1");
+    axis2[0] = var_mean[4]; axis2.Write("axis2");
+    // image
+    output_file->Cd("/images");
+    TVectorD cpt(1), npt(1), cmu(1);
+    cpt[0] = pixel_mean[0]; cpt.Write("cpt");
+    npt[0] = pixel_mean[1]; npt.Write("npt");
+    cmu[0] = pixel_mean[2]; cmu.Write("cmu");
+    output_file->Cd("/");
+
     TTree* output_tree = (TTree*) input_tree->CloneTree(0);
     output_tree->SetDirectory(output_file);
 
@@ -238,24 +256,6 @@ TString PrepTrainData(TString const& input_path)
     }
 
     output_tree->Print();
-
-    // variables
-    output_file->mkdir("/variables");
-    output_file->Cd("/variables");
-    TVectorD cmult(1), nmult(1), ptD(1), axis1(1), axis2(1);
-    cmult[0] = var_mean[0]; cmult.Write("cmult");
-    nmult[0] = var_mean[1]; nmult.Write("nmult");
-    ptD[0]   = var_mean[2]; ptD.Write("ptD");
-    axis1[0] = var_mean[3]; axis1.Write("axis1");
-    axis2[0] = var_mean[4]; axis2.Write("axis2");
-    // image
-    output_file->mkdir("/images");
-    output_file->Cd("/images");
-    TVectorD cpt(1), npt(1), cmu(1);
-    cpt[0] = pixel_mean[0]; cpt.Write("cpt");
-    npt[0] = pixel_mean[1]; npt.Write("npt");
-    cmu[0] = pixel_mean[2]; cmu.Write("cmu");
-    output_file->Cd("/");
 
     output_file->Write();
     output_file->Close();
@@ -288,16 +288,16 @@ TString PrepTestData(TString const& input_path,
     TFile* scale_file = new TFile(scale_para_path, "READ");
 
     float var_mean[5];
-    var_mean[0] = (* (TVectorD*) scale_file->Get("variables/cmult"))[0];
-    var_mean[1] = (* (TVectorD*) scale_file->Get("variables/nmult"))[0];
-    var_mean[2] = (* (TVectorD*) scale_file->Get("variables/ptD"))[0];
-    var_mean[3] = (* (TVectorD*) scale_file->Get("variables/axis1"))[0];
-    var_mean[4] = (* (TVectorD*) scale_file->Get("variables/axis2"))[0];
+    var_mean[0] = (* (TVectorD*) scale_file->Get("/variables/cmult"))[0];
+    var_mean[1] = (* (TVectorD*) scale_file->Get("/variables/nmult"))[0];
+    var_mean[2] = (* (TVectorD*) scale_file->Get("/variables/ptD"))[0];
+    var_mean[3] = (* (TVectorD*) scale_file->Get("/variables/axis1"))[0];
+    var_mean[4] = (* (TVectorD*) scale_file->Get("/variables/axis2"))[0];
 
     float pixel_mean[3];
-    pixel_mean[0] = (* (TVectorD*) scale_file->Get("image/cpt"))[0]; 
-    pixel_mean[1] = (* (TVectorD*) scale_file->Get("image/npt"))[0]; 
-    pixel_mean[2] = (* (TVectorD*) scale_file->Get("image/cmu"))[0]; 
+    pixel_mean[0] = (* (TVectorD*) scale_file->Get("/images/cpt"))[0]; 
+    pixel_mean[1] = (* (TVectorD*) scale_file->Get("/images/npt"))[0]; 
+    pixel_mean[2] = (* (TVectorD*) scale_file->Get("/images/cmu"))[0]; 
 
 
     TString suffix = scale_para_path.Contains("dijet") ? "_after_dijet" : "_after_zjet";
@@ -348,33 +348,33 @@ int main(int argc, char *argv[])
 void macro()
 {
 
-    TString input_fmt = "../1-AnalyseJets/root/%s";
+    TString input_fmt = "step5/%s";
     TString dijet_train = TString::Format(input_fmt, "dijet_train.root");
     TString dijet_test = TString::Format(input_fmt, "dijet_test.root");
-    TString zjet_train = TString::Format(input_fmt, "zjet_train.root");
-    TString zjet_test = TString::Format(input_fmt, "zjet_test.root");
+    TString zjet_train = TString::Format(input_fmt, "z_jet_train.root");
+    TString zjet_test = TString::Format(input_fmt, "z_jet_test.root");
 
     if(gSystem->AccessPathName(kOutputDir))
         gSystem->mkdir(kOutputDir);
 
-    // Make dataset
+    std::cout <<  "Make dataset" << std::endl;
     TString dj_train = MakeDataset(dijet_train);
     TString dj_test = MakeDataset(dijet_test);
     TString zj_train = MakeDataset(zjet_train);
     TString zj_test = MakeDataset(zjet_test);
 
-    // Preprocess training dataset
+    std::cout <<  "Preprocess training dataset" << std::endl;
     TString dj_train_prep = PrepTrainData(dj_train);
     TString zj_train_prep = PrepTrainData(zj_train);
     
-    // Preprocess test dataset
+    std::cout <<  "Preprocess test dataset" << std::endl;
     // Dijet test dataset for classifiers trained on Dijet dataset
-    PrepTestData(dj_test, dj_train);
+    PrepTestData(dj_test, TString::Format("%s/%s_prep.root", kOutputDir.Data(), "dijet_train"));
     // Dijet test dataset for classifiers trained on Z+jet dataset
-    PrepTestData(dj_test, zj_train);
+    PrepTestData(dj_test, TString::Format("%s/%s_prep.root", kOutputDir.Data(), "z_jet_train"));
     // Z+jet test dataset for classifiers trained on Dijet dataset
-    PrepTestData(zj_test, dj_train);
+    PrepTestData(zj_test, TString::Format("%s/%s_prep.root", kOutputDir.Data(), "dijet_train"));
     // Z+jet test dataset for classifiers trained on Z+jet dataset
-    PrepTestData(zj_test, zj_train);
+    PrepTestData(zj_test, TString::Format("%s/%s_prep.root", kOutputDir.Data(), "z_jet_train"));
 
 }

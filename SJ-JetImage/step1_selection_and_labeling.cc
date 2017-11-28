@@ -1,21 +1,27 @@
+#include "TString.h"
+#include "TFile.h"
+#include "TTree.h"
+#include "TSystem.h"
+#include<iostream>
+
 TString AttachLabel(TString input_path,
                     TString output_dir){
     // Input
     TFile* input_file = new TFile(input_path, "READ");
     TTree* input_tree = (TTree*) input_file->Get("jetAnalyser");
 
-    TString kInputName = gSystem->BaseName(input_path);
+    TString input_name = gSystem->BaseName(input_path);
     int input_entries = input_tree->GetEntries();
 
-    bool kIsQQ = kInputName.Contains("qq");
-    bool kIsGG = kInputName.Contains("gg");
-    bool kIsZQ = kInputName.Contains("zq");
+    bool kIsQQ = input_name.Contains("qq");
+    bool kIsGG = input_name.Contains("gg");
+    bool kIsZQ = input_name.Contains("zq");
 
     bool kIsQuarkJets = kIsQQ or kIsZQ;
     bool kIsDijet = kIsQQ or kIsGG;
 
-    TString criteria_name = kIsDijet ? "balanced" : "passed";
-    bool criteria
+    TString criteria_name = kIsDijet ? "balanced" : "pass_Zjets";
+    bool criteria;
     input_tree->SetBranchAddress(criteria_name, &criteria);
 
     // Output
@@ -58,13 +64,13 @@ TString AttachLabel(TString input_path,
 std::vector<TString> GetPaths(TString data_dir,
                               int num_files=20){
     TString fmt = TString::Format(
-        "./%s/mg5_pp_%s_default_pt_50_100_%d.root",
-        data_dir, "%s", "%d");
+        "./%s/mg5_pp_%%s_150_%%d.root",
+        data_dir.Data());
 
     std::vector< TString > paths;
     for(int i=1; i <= num_files; i++){
-        for(auto partons : {"qq", "gg", "zq", "zg"}){
-            TString qq_path = TString::Format(qq_fmt, i);
+        for(auto partons : {"qq", "gg", "zq", "zg"}) {
+  	    TString path = TString::Format(fmt, partons, i);
             paths.push_back(path);
         }
     }
@@ -72,17 +78,22 @@ std::vector<TString> GetPaths(TString data_dir,
     return paths;
 }
 
-
+void macro();
+int main()
+{
+  macro();
+}
 
 void macro(){
 
-    TString output_dir = "";
+    TString output_dir = "step1_labeling/";
 
     if(gSystem->AccessPathName(output_dir)){
         gSystem->mkdir(output_dir);
     }
 
-    std::vector<TString> paths = GetPaths(20);
+    TString data_dir("../1-AnalyseJets/root");
+    std::vector<TString> paths = GetPaths(data_dir, 1);
     for(auto input_path : paths){
         AttachLabel(input_path, output_dir);
     }
