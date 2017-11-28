@@ -26,7 +26,6 @@ from pipeline import DataLoader
 
 sys.path.append("..")
 from custom_losses import binary_cross_entropy_with_logits
-from custom_metrics import accuracy_with_logits
 from meters import ROCMeter, OutHist
 from utils import (
     get_log_dir,
@@ -46,7 +45,6 @@ def evaluate(saved_model_path,
         filepath=saved_model_path,
         custom_objects={
             "binary_cross_entropy_with_logits": binary_cross_entropy_with_logits,
-            "accuracy_with_logits": accuracy_with_logits,
         },
     )
     model = add_an_sigmoid_layer(model_logit, "prediction")

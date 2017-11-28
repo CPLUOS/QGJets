@@ -26,7 +26,6 @@ from pipeline import DataLodaer
 sys.path.append("..")
 from keras4jet.models.image.resnet import build_a_model
 from keras4jet.losses import binary_cross_entropy_with_logits
-from keras4jet.metrics import accuracy_with_logits
 from keras4jet.meters import Meter
 from keras4jet.utils import (
     get_log_dir,
@@ -108,7 +107,7 @@ def main():
     # Define 
     loss = binary_cross_entropy_with_logits
     optimizer = optimizers.Adam(lr=args.lr)
-    metrics = [accuracy_with_logits]
+    metrics = ['accuracy']
 
     model.compile(
         loss=loss,

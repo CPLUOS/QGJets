@@ -27,7 +27,6 @@ from models import add_an_sigmoid_layer
 from pipeline import DataLodaer
 
 #from custom_losses import binary_cross_entropy_with_logits
-#from custom_metrics import accuracy_with_logits
 from meters import ROCMeter, OutHist
 from utils import (
     get_log_dir,
