@@ -1,4 +1,14 @@
-#include "../../External/jsoncpp/jsoncpp.cpp"
+#include "TString.h"
+#include "TSystem.h"
+#include "TTree.h"
+#include "TFile.h"
+#include "TVectorD.h"
+
+#include<iostream>
+#include<fstream>
+
+using std::cout;
+using std::endl;
 
 //////////////////////////////////////////////////////
 const int kChannel = 3;
@@ -23,8 +33,8 @@ bool IsInfty(T i) {return std::abs(i) == std::numeric_limits<T>::infinity();}
 ////////////////////////////////////////////////////////////////////
 
 TString MakeDataset(TString const& input_path,
-                    TString const& input_key="jetAnalyser"){
-
+                    TString const& input_key="jetAnalyser")
+{
     std::cout << "\n#################################################" << endl;
     std::cout << "Input: " << input_path << endl;
 
@@ -144,8 +154,8 @@ TString MakeDataset(TString const& input_path,
 Preprocess trainin dataset
   - Scaling
 */
-std::tuple<TString, TString> PrepTrainData(TString const& input_path){
-
+TString PrepTrainData(TString const& input_path)
+{
     TFile* input_file = TFile::Open(input_path);
     TTree* input_tree = (TTree*) input_file->Get(kTreeName);
 
@@ -199,28 +209,6 @@ std::tuple<TString, TString> PrepTrainData(TString const& input_path){
     for(int c=0; c < kChannel; c++)
         pixel_mean[c] = pixel_sum[c] / pixel_count[c];
 
-
-    TString scale_para_name = input_name.Contains("dijet") ? "scale_para_dijet.json" : "scale_para_zjet.json";
-    TString scale_para_path = gSystem->ConcatFileName(kOutputDir, scale_para_name);
-    std::ofstream scale_para_file(scale_para_path);
-
-    Json::Value scale_para;
-    // variables
-    scale_para["variables"]["cmult"] = var_mean[0];
-    scale_para["variables"]["nmult"] = var_mean[1];
-    scale_para["variables"]["ptD"]   = var_mean[2];
-    scale_para["variables"]["axis1"] = var_mean[3];
-    scale_para["variables"]["axis2"] = var_mean[4];
-    // image
-    scale_para["image"]["cpt"] = pixel_mean[0];
-    scale_para["image"]["npt"] = pixel_mean[1];
-    scale_para["image"]["cmu"] = pixel_mean[2];
-
-    Json::StyledWriter styled_writer;
-    scale_para_file << styled_writer.write(scale_para);
-    scale_para_file.close();
-
-
     // Name output file
     TString output_name = input_name.Insert(input_name.Last('.'), "_prep");
     TString output_path = gSystem->ConcatFileName(kOutputDir, output_name);
@@ -250,12 +238,31 @@ std::tuple<TString, TString> PrepTrainData(TString const& input_path){
     }
 
     output_tree->Print();
+
+    // variables
+    output_file->mkdir("/variables");
+    output_file->Cd("/variables");
+    TVectorD cmult(1), nmult(1), ptD(1), axis1(1), axis2(1);
+    cmult[0] = var_mean[0]; cmult.Write("cmult");
+    nmult[0] = var_mean[1]; nmult.Write("nmult");
+    ptD[0]   = var_mean[2]; ptD.Write("ptD");
+    axis1[0] = var_mean[3]; axis1.Write("axis1");
+    axis2[0] = var_mean[4]; axis2.Write("axis2");
+    // image
+    output_file->mkdir("/images");
+    output_file->Cd("/images");
+    TVectorD cpt(1), npt(1), cmu(1);
+    cpt[0] = pixel_mean[0]; cpt.Write("cpt");
+    npt[0] = pixel_mean[1]; npt.Write("npt");
+    cmu[0] = pixel_mean[2]; cmu.Write("cmu");
+    output_file->Cd("/");
+
     output_file->Write();
     output_file->Close();
 
     input_file->Close();
 
-    return std::make_tuple(output_path, scale_para_path);
+    return output_path;
 }
 
 
@@ -278,27 +285,19 @@ TString PrepTestData(TString const& input_path,
     SBA(label);
 
     // Read scale parameter from json file.
-    std::ifstream json_file(scale_para_path);
-
-    Json::Value json_root;
-    Json::Reader json_reader;
-
-    if(not json_reader.parse(json_file, json_root, true)){
-        std::cout << "Failed to parse configuration" << endl
-                 << json_reader.getFormattedErrorMessages();
-    }
+    TFile* scale_file = new TFile(scale_para_path, "READ");
 
     float var_mean[5];
-    var_mean[0] = json_root["variables"]["cmult"].asFloat();
-    var_mean[1] = json_root["variables"]["nmult"].asFloat();
-    var_mean[2] = json_root["variables"]["ptD"].asFloat();
-    var_mean[3] = json_root["variables"]["axis1"].asFloat();
-    var_mean[4] = json_root["variables"]["axis2"].asFloat();
+    var_mean[0] = (* (TVectorD*) scale_file->Get("variables/cmult"))[0];
+    var_mean[1] = (* (TVectorD*) scale_file->Get("variables/nmult"))[0];
+    var_mean[2] = (* (TVectorD*) scale_file->Get("variables/ptD"))[0];
+    var_mean[3] = (* (TVectorD*) scale_file->Get("variables/axis1"))[0];
+    var_mean[4] = (* (TVectorD*) scale_file->Get("variables/axis2"))[0];
 
     float pixel_mean[3];
-    pixel_mean[0] = json_root["image"]["cpt"].asFloat(); 
-    pixel_mean[1] = json_root["image"]["npt"].asFloat(); 
-    pixel_mean[2] = json_root["image"]["cmu"].asFloat(); 
+    pixel_mean[0] = (* (TVectorD*) scale_file->Get("image/cpt"))[0]; 
+    pixel_mean[1] = (* (TVectorD*) scale_file->Get("image/npt"))[0]; 
+    pixel_mean[2] = (* (TVectorD*) scale_file->Get("image/cmu"))[0]; 
 
 
     TString suffix = scale_para_path.Contains("dijet") ? "_after_dijet" : "_after_zjet";
@@ -340,10 +339,16 @@ TString PrepTestData(TString const& input_path,
     return output_path;
 }
 
+void macro();
+int main(int argc, char *argv[])
+{
+  macro();
+}
 
-void macro(){
+void macro()
+{
 
-    TString input_fmt = "$JET/Data/FastSim_pt_100_500/%s";
+    TString input_fmt = "../1-AnalyseJets/root/%s";
     TString dijet_train = TString::Format(input_fmt, "dijet_train.root");
     TString dijet_test = TString::Format(input_fmt, "dijet_test.root");
     TString zjet_train = TString::Format(input_fmt, "zjet_train.root");
@@ -359,23 +364,17 @@ void macro(){
     TString zj_test = MakeDataset(zjet_test);
 
     // Preprocess training dataset
-    TString dj_train_prep, dj_scale_para;
-    std::tie(dj_train_prep, dj_scale_para) = PrepTrainData(dj_train);
-
-    TString zj_train_prep, zj_scale_para;
-    std::tie(zj_train_prep, zj_scale_para) = PrepTrainData(zj_train);
-
+    TString dj_train_prep = PrepTrainData(dj_train);
+    TString zj_train_prep = PrepTrainData(zj_train);
+    
     // Preprocess test dataset
     // Dijet test dataset for classifiers trained on Dijet dataset
-    PrepTestData(dj_test, dj_scale_para); 
+    PrepTestData(dj_test, dj_train);
     // Dijet test dataset for classifiers trained on Z+jet dataset
-    PrepTestData(dj_test, zj_scale_para);
+    PrepTestData(dj_test, zj_train);
     // Z+jet test dataset for classifiers trained on Dijet dataset
-    PrepTestData(zj_test, dj_scale_para);
+    PrepTestData(zj_test, dj_train);
     // Z+jet test dataset for classifiers trained on Z+jet dataset
-    PrepTestData(zj_test, zj_scale_para);
+    PrepTestData(zj_test, zj_train);
 
 }
-
-
-
