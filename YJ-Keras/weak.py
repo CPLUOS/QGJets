@@ -18,7 +18,7 @@ import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 from importlib import import_module
 config =tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction=0.9
+config.gpu_options.per_process_gpu_memory_fraction=0.4
 set_session(tf.Session(config=config))
 
 batch_size = 500
@@ -26,7 +26,7 @@ num_classes = 2
 epochs = 20
 
 parser=argparse.ArgumentParser()
-parser.add_argument("--rat",type=float,default=0.8,help='ratio for weak qg batch')
+parser.add_argument("--rat",type=float,default=0.6,help='ratio for weak qg batch')
 args=parser.parse_args()
 
 # input image dimensions
