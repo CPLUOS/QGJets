@@ -25,6 +25,8 @@ epochs = 20
 
 parser=argparse.ArgumentParser()
 parser.add_argument("--rat",type=float,default=0.6,help='ratio for weak qg batch')
+parser.add_argument("--epoch",type=int,default=10,help='epoch')
+parser.add_argument("--load",type=str,default="weakdijet_0.8",help='load name')
 parser.add_argument("--save",type=str,default=1,help='rch')
 args=parser.parse_args()
 
@@ -47,8 +49,8 @@ input_shape = (3,img_rows, img_cols)
 #              optimizer=keras.optimizers.Adadelta(),
 #              metrics=['accuracy'])
 #model=keras.models.load_model('save/fullydijetsame_10')
-savename=args.save
-model=keras.models.load_model(savename)
+savename="save/"+args.load
+model=keras.models.load_model(savename+"/_"+str(args.epoch))
 
 #train=wkiter(["root/cutb/q"+str(int(args.rat*100))+"img.root","root/cutb/g"+str(int(args.rat*100))+"img.root"],batch_size=batch_size,end=1,istrain=1,friend=0)
 test=wkiter("root",friend=20,begin=5./7.,end=1.,batch_size=batch_size)
@@ -74,13 +76,13 @@ plt.figure(1)
 plt.hist(q,bins=50,weights=np.ones_like(q),histtype='step',alpha=0.7,label='quark')
 plt.hist(g,bins=50,weights=np.ones_like(g),histtype='step',alpha=0.7,label='gluon')
 plt.legend(loc="upper center")
-plt.savefig(savename+"like.png")
+plt.savefig(savename+"/like"+str(args.epoch)+".png")
 t_fpr,t_tpr,_=roc_curve(x,y)
 t_fnr=1-t_fpr
 train_auc=np.around(auc(t_fpr,t_tpr),4)
 plt.figure(2)
 plt.plot(t_tpr,t_fnr,alpha=0.5,label="AUC={}".format(train_auc),lw=2)
 plt.legend(loc='lower left')
-plt.savefig(savename+"roc.png")
+plt.savefig(savename+"/roc"+str(args.epoch)+".png")
 #print(b,c)
 
