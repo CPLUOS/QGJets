@@ -66,6 +66,7 @@ class wkiter(object):
         self.gEnd.append(int(self.gEntries[i]*end))
         self.qnum+=self.qEnd[i]-self.qBegin[i]
         self.gnum+=self.gEnd[i]-self.gBegin[i]
+
       self.a=self.gBegin[0]
       self.b=self.qBegin[0]
       self.aq=self.gBegin[self.frat]
@@ -159,6 +160,7 @@ class wkiter(object):
       return int((self.qnum+self.gnum)/self.batch_size*0.80)
     else:
       return int((self.qEnd-self.qBegin+self.gEnd-self.qBegin)/self.batch_size*0.80)
+
   def next(self):
     while self.endfile==0:
       arnum=self.arnum
