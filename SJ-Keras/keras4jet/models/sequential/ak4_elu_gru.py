@@ -59,13 +59,13 @@ def build_a_model(input0_shape, input1_shape):
     x = dense_block(x, 100, "elu")
     x = dense_block(x, 100, "elu")
 
-    # Output: softmax
-    softmax = Dense(units=1, activation='softmax')(x)
+    # Output: sigmoid
+    sigmoid = Dense(units=1, activation='sigmoid')(x)
 
     # Create model.
     model = Model(
         inputs=[input_daus, input_glob],
-        outputs=softmax,
+        outputs=sigmoid,
         name="AK4EluGRU")
     return model
 
