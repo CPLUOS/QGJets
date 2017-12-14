@@ -11,7 +11,7 @@
 
 using std::string;
 
-Double_t minJetPT = 100.0;
+Double_t minJetPT = 20.0;
 Double_t maxJetEta = 2.4;
 Double_t dRCut = 0.3;
 bool doHadMerge = false;
@@ -126,6 +126,10 @@ int main(int argc, char *argv[])
 #define BranchI(name) Branch_(Int_t, name, I)
 #define BranchF(name) Branch_(Float_t, name, F)
 #define BranchO(name) Branch_(Bool_t, name, O)
+#define BranchA_(type, name, size, suffix) type name[size] = {0.}; outtr->Branch(#name, &name, #name"["#size"]/"#suffix);
+#define BranchAI(name, size) BranchA_(Int_t, name, size, I);
+#define BranchAF(name, size) BranchA_(Float_t, name, size, F);
+#define BranchAO(name, size) BranchA_(Bool_t, name, size, O);
 #define BranchVF(name) std::vector<float> name; outtr->Branch(#name, "vector<float>", &name);
 #define BranchVI(name) std::vector<int> name; outtr->Branch(#name, "vector<int>", &name);
   BranchI(nEvent);
@@ -153,6 +157,7 @@ int main(int argc, char *argv[])
   BranchI(flavorAlgoId);
   BranchI(flavorPhysId);
 
+#ifdef WOOJIN_VARIABLES
   // BDT (woojin) variables
   BranchF(GeoMoment);
   BranchF(HalfPtMoment);
@@ -203,6 +208,7 @@ int main(int argc, char *argv[])
   BranchF(RKF_05);
   BranchF(RKF_06);
   BranchF(RKF_07);
+  BranchF(RKF_08);
   
   BranchF(MRKF_CC_01);
   BranchF(MRKF_CC_02);
@@ -211,6 +217,7 @@ int main(int argc, char *argv[])
   BranchF(MRKF_CC_05);
   BranchF(MRKF_CC_06);
   BranchF(MRKF_CC_07);
+  BranchF(MRKF_CC_08);
 
   BranchF(MRKF_CN_01);
   BranchF(MRKF_CN_02);
@@ -219,6 +226,7 @@ int main(int argc, char *argv[])
   BranchF(MRKF_CN_05);
   BranchF(MRKF_CN_06);
   BranchF(MRKF_CN_07);
+  BranchF(MRKF_CN_08);
 
   BranchF(MRKF_NC_01);
   BranchF(MRKF_NC_02);
@@ -227,6 +235,7 @@ int main(int argc, char *argv[])
   BranchF(MRKF_NC_05);
   BranchF(MRKF_NC_06);
   BranchF(MRKF_NC_07);
+  BranchF(MRKF_NC_08);
 
   BranchF(MRKF_NN_01);
   BranchF(MRKF_NN_02);
@@ -235,15 +244,17 @@ int main(int argc, char *argv[])
   BranchF(MRKF_NN_05);
   BranchF(MRKF_NN_06);
   BranchF(MRKF_NN_07);
+  BranchF(MRKF_NN_08);
 
-  BranchVF(RKF);
-  BranchVF(MRKF_CC);
-  BranchVF(MRKF_CN);
-  BranchVF(MRKF_NC);
-  BranchVF(MRKF_NN);
+  BranchAF(RKF, 80);
+  BranchAF(MRKF_CC, 80);
+  BranchAF(MRKF_CN, 80);
+  BranchAF(MRKF_NC, 80);
+  BranchAF(MRKF_NN, 80);
 
+  BranchVF(deltaR);
 
-
+#endif
 
   BranchVF(dau_pt);
   BranchVF(dau_deta);
@@ -352,6 +363,7 @@ int main(int argc, char *argv[])
       flavorAlgoId = jet->FlavorAlgo;
       flavorPhysId = jet->FlavorPhys;
 
+#ifdef WOOJIN_VARIABLES
       ptDoubleCone = 0;
       GeoMoment = 0;
       HalfPtMoment = 0;
@@ -398,6 +410,7 @@ int main(int argc, char *argv[])
       RKF_05 = 0;
       RKF_06 = 0;
       RKF_07 = 0;
+      RKF_08 = 0;
 
       MRKF_CC_01 = 0;
       MRKF_CC_02 = 0;
@@ -406,6 +419,7 @@ int main(int argc, char *argv[])
       MRKF_CC_05 = 0;
       MRKF_CC_06 = 0;
       MRKF_CC_07 = 0;
+      MRKF_CC_08 = 0;
 
       MRKF_CN_01 = 0;
       MRKF_CN_02 = 0;
@@ -414,6 +428,7 @@ int main(int argc, char *argv[])
       MRKF_CN_05 = 0;
       MRKF_CN_06 = 0;
       MRKF_CN_07 = 0;
+      MRKF_CN_08 = 0;
 
       MRKF_NC_01 = 0;
       MRKF_NC_02 = 0;
@@ -422,6 +437,7 @@ int main(int argc, char *argv[])
       MRKF_NC_05 = 0;
       MRKF_NC_06 = 0;
       MRKF_NC_07 = 0;
+      MRKF_NC_08 = 0;
 
       MRKF_NN_01 = 0;
       MRKF_NN_02 = 0;
@@ -430,13 +446,16 @@ int main(int argc, char *argv[])
       MRKF_NN_05 = 0;
       MRKF_NN_06 = 0;
       MRKF_NN_07 = 0;
+      MRKF_NN_08 = 0;
 
-      RKF.clear();
-      MRKF_CC.clear();
-      MRKF_CN.clear();
-      MRKF_NC.clear();
-      MRKF_NN.clear();
+      memset(RKF,0, sizeof(RKF));
+      memset(MRKF_CC,0, sizeof(MRKF_CC));
+      memset(MRKF_CN,0, sizeof(MRKF_CN));
+      memset(MRKF_NC,0, sizeof(MRKF_NC));
+      memset(MRKF_NN,0, sizeof(MRKF_NN));
 
+      deltaR.clear();
+#endif
 
 
       axis1 = 0; axis2 = 0;
@@ -456,16 +475,14 @@ int main(int argc, char *argv[])
       else
 	fillDaughters(jet, leading_dau_pt, leading_dau_eta, dau_pt, dau_deta, dau_dphi, dau_charge, dau_ishadronic, nmult, cmult);
 
+#ifdef WOOJIN_VARIABLES
         // charged dau pt sum
       for (size_t a = 0; a < dau_pt.size(); ++ a) {
         auto dau_a = jet->Constituents.At(a);
-        auto tower_a = dynamic_cast<Tower*>(dau_a);
-        if (!tower_a) {
-          auto track_a = dynamic_cast<Track*>(dau_a);
-          if (track_a) {
-            sum_track_pt += track_a->PT;
-          }
-        }
+	auto track_a = dynamic_cast<Track*>(dau_a);
+	if (track_a) {
+	  sum_track_pt += track_a->PT;
+	}
       }
       
         // radial distance of daugther farthest from the jet
@@ -477,145 +494,119 @@ int main(int argc, char *argv[])
           drmax = maxcand;
         }
       }
-        // Ripley's K function estimater
-      for ( int t = 0; t < 81; ++t){
-        double sum_RKF = 0.;
-        double sum_MRKF_CC = 0.;
-        double sum_MRKF_CN = 0.;
-        double sum_MRKF_NC = 0.;
-        double sum_MRKF_NN = 0.;
-        double search_distance = ((double)t/100. + 0.01);
-        // unvariate case and bivariate(charged, neutral) case
-        for (size_t c = 0; c < dau_pt.size(); ++c ) {
-          for (size_t d = 0; d < dau_pt.size(); ++d ) {
-            auto dau_c = jet->Constituents.At(c);
-            auto dau_d = jet->Constituents.At(d);
-            double deta_c = dau_deta[c];
-            double dphi_c = dau_dphi[c];
-            double deta_d = dau_deta[d];
-            double dphi_d = dau_dphi[d];
-            double dr_c = DeltaR(deta_c, dphi_c);
-            double dr_d = DeltaR(deta_d, dphi_d);
-            double study_area = 0.8;
-            auto cdau_c = dynamic_cast<Track*>(dau_c);
-            auto ndau_c = dynamic_cast<Tower*>(dau_c);
-            auto cdau_d = dynamic_cast<Track*>(dau_d);
-            auto ndau_d = dynamic_cast<Tower*>(dau_d);
-            if (c == d) continue;
-            if (study_area < dr_c) continue;
-            if (study_area < dr_d) continue;
-            if (cdau_c && cdau_d){
-              double dr_cc_cd = DeltaR(cdau_c->Eta - cdau_d->Eta, cdau_c->Phi - cdau_d->Phi);
-              if (dr_cc_cd < search_distance){
-                if (dr_cc_cd > study_area - dr_c){
-                  sum_RKF += KF1(study_area, dr_c, dr_cc_cd, cmult + nmult, cmult + nmult);
-                  sum_MRKF_CC += KF1(study_area, dr_c, dr_cc_cd, cmult, cmult);
+      // Ripley's K function estimater
+      // unvariate case and bivariate(charged, neutral) case
+
+      double study_area = 0.8;
+      for (size_t c = 0; c < dau_pt.size(); ++c ) {
+        auto dau_c = jet->Constituents.At(c);
+        double deta_c = dau_deta[c];
+        double dphi_c = dau_dphi[c];
+        double dr_c = DeltaR(deta_c, dphi_c);
+	for (size_t e = c+1; e < dau_pt.size(); ++e ) {
+	  deltaR.push_back(DeltaR(dau_deta[c] - dau_deta[e], dau_dphi[c] - dau_dphi[e])); // distance between c-th particle and e-th particle
+	}
+	if (study_area < dr_c) continue;
+        for (size_t d = 0; d < dau_pt.size(); ++d ) {
+          if (c == d) continue;
+          auto dau_d = jet->Constituents.At(d);
+          double deta_d = dau_deta[d];
+          double dphi_d = dau_dphi[d];
+          double dr_d = DeltaR(deta_d, dphi_d);
+          if (study_area < dr_d) continue;
+          auto cdau_c = dynamic_cast<Track*>(dau_c);
+          auto ndau_c = dynamic_cast<Tower*>(dau_c);
+          auto cdau_d = dynamic_cast<Track*>(dau_d);
+          auto ndau_d = dynamic_cast<Tower*>(dau_d);
+          double dr_cd = DeltaR(deta_c - deta_d, dphi_c - dphi_d);
+          for ( int t = 0; t < 80; ++t){
+            double search_distance = ((double)t/100. + 0.01);
+            if (dr_cd < search_distance){
+              if (dr_cd > study_area - dr_c){
+                RKF[t] += KF1(study_area, dr_c, dr_cd, cmult + nmult, cmult + nmult);
+                if (cdau_c && cdau_d){
+                  MRKF_CC[t] += KF1(study_area, dr_c, dr_cd, cmult, cmult);
                 }
-                if (dr_cc_cd <= study_area - dr_c){
-                  sum_RKF += KF2(study_area, cmult + nmult, cmult + nmult);
-                  sum_MRKF_CC += KF2(study_area, cmult, cmult);
+                if (cdau_c && ndau_d){
+                  MRKF_CN[t] += KF1(study_area, dr_c, dr_cd, cmult, nmult);
+                }
+                if (ndau_c && cdau_d){
+                  MRKF_NC[t] += KF1(study_area, dr_c, dr_cd, cmult, nmult);
+                }
+                if (ndau_c && ndau_d){
+                  MRKF_NN[t] += KF1(study_area, dr_c, dr_cd, nmult, nmult);
+                }
+              }
+              if (dr_cd <= study_area - dr_c){
+                RKF[t] += KF2(study_area, cmult + nmult, cmult + nmult);
+                if (cdau_c && cdau_d){
+                  MRKF_CC[t] += KF2(study_area, cmult, cmult);
+                }
+                if (cdau_c && ndau_d){
+                  MRKF_CN[t] += KF2(study_area, cmult,nmult);
+                }
+                if (ndau_c && cdau_d){
+                  MRKF_NC[t] += KF2(study_area, cmult, nmult);
+                }
+                if (ndau_c && ndau_d){
+                  MRKF_NN[t] += KF2(study_area, nmult, nmult);
                 }
               }
             }
-            if (cdau_c && ndau_d){
-              double dr_cn_cd = DeltaR(cdau_c->Eta - ndau_d->Eta, cdau_c->Phi - ndau_d->Phi);
-              if (dr_cn_cd < search_distance){
-                if (dr_cn_cd > study_area - dr_c){
-                  sum_RKF += KF1(study_area, dr_c, dr_cn_cd, cmult + nmult, cmult + nmult);
-                  sum_MRKF_CN += KF1(study_area, dr_c, dr_cn_cd, cmult, nmult);
-                }
-                if (dr_cn_cd <= study_area - dr_c){
-                  sum_RKF += KF2(study_area, cmult + nmult, cmult + nmult);
-                  sum_MRKF_CN += KF2(study_area, cmult,nmult);
-                }
-              }
-            }
-            if (ndau_c && cdau_d){
-              double dr_nc_cd = DeltaR(ndau_c->Eta - cdau_d->Eta, ndau_c->Phi - cdau_d->Phi);
-              if (dr_nc_cd < search_distance){
-                if (dr_nc_cd > study_area - dr_c){
-                  sum_RKF += KF1(study_area, dr_c, dr_nc_cd, cmult + nmult, cmult + nmult);
-                  sum_MRKF_NC += KF1(study_area, dr_c, dr_nc_cd, cmult, nmult);
-                }
-                if (dr_nc_cd <= study_area - dr_c){
-                  sum_RKF += KF2(study_area, cmult + nmult, cmult + nmult);
-                  sum_MRKF_NC += KF2(study_area, cmult, nmult);
-                }
-              }
-            }
-            if (ndau_c && ndau_d){
-              double dr_nn_cd = DeltaR(ndau_c->Eta - ndau_d->Eta, ndau_c->Phi - ndau_d->Phi);
-              if (dr_nn_cd < search_distance){
-                if (dr_nn_cd > study_area - dr_c){
-                  sum_RKF += KF1(study_area, dr_c, dr_nn_cd, cmult + nmult, cmult + nmult);
-                  sum_MRKF_NN += KF1(study_area, dr_c, dr_nn_cd, nmult, nmult);
-                }
-                if (dr_nn_cd <= study_area - dr_c){
-                  sum_RKF += KF2(study_area, cmult + nmult, cmult + nmult);
-                  sum_MRKF_NN += KF2(study_area, nmult, nmult);
-                }
-              }
-            }
+            else continue;
           }
         }
         //std::cout << "search_distance: " << search_distance << ", RKF: " << sum_RKF << ", MRKF_CC: " << sum_MRKF_CC << ", MRKF_CN: " << sum_MRKF_CN << ", MRKF_NC: " << sum_MRKF_NC << ", MRKF_NN: " << sum_MRKF_NN << std::endl;
-        if (search_distance == 0.1){
-          RKF_01 = sum_RKF;
-          MRKF_CC_01 = sum_MRKF_CC;
-          MRKF_CN_01 = sum_MRKF_CN;
-          MRKF_NC_01 = sum_MRKF_NC;
-          MRKF_NN_01 = sum_MRKF_NN;
-        }
-        if (search_distance == 0.2){
-          RKF_02 = sum_RKF;
-          MRKF_CC_02 = sum_MRKF_CC;
-          MRKF_CN_02 = sum_MRKF_CN;
-          MRKF_NC_02 = sum_MRKF_NC;
-          MRKF_NN_02 = sum_MRKF_NN;
-        }
-        if (search_distance == 0.31){
-          RKF_03 = sum_RKF;
-          MRKF_CC_03 = sum_MRKF_CC;
-          MRKF_CN_03 = sum_MRKF_CN;
-          MRKF_NC_03 = sum_MRKF_NC;
-          MRKF_NN_03 = sum_MRKF_NN;
-        }
-        if (search_distance == 0.4){
-          RKF_04 = sum_RKF;
-          MRKF_CC_04 = sum_MRKF_CC;
-          MRKF_CN_04 = sum_MRKF_CN;
-          MRKF_NC_04 = sum_MRKF_NC;
-          MRKF_NN_04 = sum_MRKF_NN;
-        }
-        if (search_distance == 0.5){
-          RKF_05 = sum_RKF;
-          MRKF_CC_05 = sum_MRKF_CC;
-          MRKF_CN_05 = sum_MRKF_CN;
-          MRKF_NC_05 = sum_MRKF_NC;
-          MRKF_NN_05 = sum_MRKF_NN;
-        }
-        if (search_distance == 0.6){
-          RKF_06 = sum_RKF;
-          MRKF_CC_06 = sum_MRKF_CC;
-          MRKF_CN_06 = sum_MRKF_CN;
-          MRKF_NC_06 = sum_MRKF_NC;
-          MRKF_NN_06 = sum_MRKF_NN;
-        }
-        if (search_distance == 0.7){
-          RKF_07 = sum_RKF;
-          MRKF_CC_07 = sum_MRKF_CC;
-          MRKF_CN_07 = sum_MRKF_CN;
-          MRKF_NC_07 = sum_MRKF_NC;
-          MRKF_NN_07 = sum_MRKF_NN;
-        }
-        RKF.push_back(sum_RKF);
-        MRKF_CC.push_back(sum_MRKF_CC);
-        MRKF_CN.push_back(sum_MRKF_CN);
-        MRKF_NC.push_back(sum_MRKF_NC);
-        MRKF_NN.push_back(sum_MRKF_NN);
       }
+      RKF_01 = RKF[9];
+      MRKF_CC_01 = MRKF_CC[9];
+      MRKF_CN_01 = MRKF_CN[9];
+      MRKF_NC_01 = MRKF_NC[9];
+      MRKF_NN_01 = MRKF_NN[9];
 
+      RKF_02 = RKF[19];
+      MRKF_CC_02 = MRKF_CC[19];
+      MRKF_CN_02 = MRKF_CN[19];
+      MRKF_NC_02 = MRKF_NC[19];
+      MRKF_NN_02 = MRKF_NN[19];
 
+      RKF_03 = RKF[29];
+      MRKF_CC_03 = MRKF_CC[29];
+      MRKF_CN_03 = MRKF_CN[29];
+      MRKF_NC_03 = MRKF_NC[29];
+      MRKF_NN_03 = MRKF_NN[29];
+
+      RKF_04 = RKF[39];
+      MRKF_CC_04 = MRKF_CC[39];
+      MRKF_CN_04 = MRKF_CN[39];
+      MRKF_NC_04 = MRKF_NC[39];
+      MRKF_NN_04 = MRKF_NN[39];
+
+      RKF_05 = RKF[49];
+      MRKF_CC_05 = MRKF_CC[49];
+      MRKF_CN_05 = MRKF_CN[49];
+      MRKF_NC_05 = MRKF_NC[49];
+      MRKF_NN_05 = MRKF_NN[49];
+
+      RKF_06 = RKF[59];
+      MRKF_CC_06 = MRKF_CC[59];
+      MRKF_CN_06 = MRKF_CN[59];
+      MRKF_NC_06 = MRKF_NC[59];
+      MRKF_NN_06 = MRKF_NN[59];
+
+      RKF_07 = RKF[69];
+      MRKF_CC_07 = MRKF_CC[69];
+      MRKF_CN_07 = MRKF_CN[69];
+      MRKF_NC_07 = MRKF_NC[69];
+      MRKF_NN_07 = MRKF_NN[69];
+
+      RKF_08 = RKF[79];
+      MRKF_CC_08 = MRKF_CC[79];
+      MRKF_CN_08 = MRKF_CN[79];
+      MRKF_NC_08 = MRKF_NC[79];
+      MRKF_NN_08 = MRKF_NN[79];
+
+#endif
 
       float sum_weight = 0;
       float sum_pt = 0;
@@ -639,6 +630,7 @@ int main(int argc, char *argv[])
 	sum_dphi2 += dphi*dphi*weight;
 	sum_detadphi += deta*dphi*weight;
 
+#ifdef WOOJIN_VARIABLES
         GeoMoment += (powf((dpt/pt),1))*(powf((dr/dRCut),1));
         HalfPtMoment += (powf((dpt/pt),1.5))*(powf((dr/dRCut),0));
         DRSquareMoment += (powf((dpt/pt),0))*(powf((dr/dRCut),2));
@@ -667,55 +659,45 @@ int main(int argc, char *argv[])
         weighted_outerring = outerring/drmax;
 
         auto dau_ic = jet->Constituents.At(ic);
-        auto tower_ic = dynamic_cast<Tower*>(dau_ic);
-        if (!tower_ic) {
-          auto track_ic = dynamic_cast<Track*>(dau_ic);
-          if (track_ic) {
-            if (dr < 0.1 && dr > 0.) {
-              inner_charged_GeoMoment_0_1 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < 0.2 && dr > 0.1) {
-              inner_charged_GeoMoment_1_2 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < 0.3 && dr > 0.2) {
-              inner_charged_GeoMoment_2_3 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < 0.4 && dr > 0.3) {
-              inner_charged_GeoMoment_3_4 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
-            if (dr < dRCut*2 && dr > 0.4) {
-              outer_charged_GeoMoment += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
-            }
+	auto track_ic = dynamic_cast<Track*>(dau_ic);
+	if (track_ic) {
+	  if (dr < 0.1 && dr > 0.) {
+	    inner_charged_GeoMoment_0_1 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < 0.2 && dr > 0.1) {
+	    inner_charged_GeoMoment_1_2 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < 0.3 && dr > 0.2) {
+	    inner_charged_GeoMoment_2_3 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < 0.4 && dr > 0.3) {
+	    inner_charged_GeoMoment_3_4 += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  if (dr < dRCut*2 && dr > 0.4) {
+	    outer_charged_GeoMoment += (powf((track_ic->PT/pt),1))*(powf((dr/dRCut),1));
+	  }
+	  
+	  for (size_t i = ic+1; i < dau_pt.size(); ++i) {
+	    auto dau_i = jet->Constituents.At(i);
+	    auto track_i = dynamic_cast<Track*>(dau_i);
+	    if (track_i) {
+	      ang_EEC_beta_0 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0))/(sum_track_pt);
+	      ang_EEC_beta_1 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.1))/(sum_track_pt);
+	      ang_EEC_beta_2 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.2))/(sum_track_pt);
+	      ang_EEC_beta_3 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.3))/(sum_track_pt);
+	      ang_EEC_beta_4 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.4))/(sum_track_pt);
+	      ang_EEC_beta_5 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.5))/(sum_track_pt);
+	      ang_EEC_beta_6 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.6))/(sum_track_pt);
+	      ang_EEC_beta_7 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.7))/(sum_track_pt);
+	      ang_EEC_beta_8 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.8))/(sum_track_pt);
+	      ang_EEC_beta_9 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.9))/(sum_track_pt);
+	      ang_EEC_beta_10 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 1.0))/(sum_track_pt);
+	    }
+	  }
+	}
+#endif
 
-            for (size_t i = 0; i < dau_pt.size(); ++i) {
-              auto dau_i = jet->Constituents.At(i);
-              auto tower_i = dynamic_cast<Tower*>(dau_i);
-              if (!tower_i) {
-                auto track_i = dynamic_cast<Track*>(dau_i);
-                if (track_i) {
-                  if (ic >= i) {
-                  continue;
-                  }
-                  if (ic < i) {
-                    ang_EEC_beta_0 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0))/(sum_track_pt);
-                    ang_EEC_beta_1 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.1))/(sum_track_pt);
-                    ang_EEC_beta_2 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.2))/(sum_track_pt);
-                    ang_EEC_beta_3 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.3))/(sum_track_pt);
-                    ang_EEC_beta_4 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.4))/(sum_track_pt);
-                    ang_EEC_beta_5 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.5))/(sum_track_pt);
-                    ang_EEC_beta_6 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.6))/(sum_track_pt);
-                    ang_EEC_beta_7 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.7))/(sum_track_pt);
-                    ang_EEC_beta_8 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.8))/(sum_track_pt);
-                    ang_EEC_beta_9 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.9))/(sum_track_pt);
-                    ang_EEC_beta_10 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 1.0))/(sum_track_pt);
-                  }
-                }
-              }
-            }
-          }
-        }
       }
-
       float a = 0, b = 0, c = 0;
       if (sum_weight > 0) {
 	ptD = TMath::Sqrt(sum_weight) / sum_pt;
