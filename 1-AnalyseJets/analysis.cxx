@@ -503,9 +503,9 @@ int main(int argc, char *argv[])
         double deta_c = dau_deta[c];
         double dphi_c = dau_dphi[c];
         double dr_c = DeltaR(deta_c, dphi_c);
-	for (size_t e = c+1; e < dau_pt.size(); ++e ) {
-	  deltaR.push_back(DeltaR(dau_deta[c] - dau_deta[e], dau_dphi[c] - dau_dphi[e])); // distance between c-th particle and e-th particle
-	}
+        for (size_t e = c+1; e < dau_pt.size(); ++e ) {
+          deltaR.push_back(DeltaR(dau_deta[c] - dau_deta[e], dau_dphi[c] - dau_dphi[e])); // distance between c-th particle and e-th particle
+        }
 	if (study_area < dr_c) continue;
         for (size_t d = 0; d < dau_pt.size(); ++d ) {
           if (c == d) continue;
@@ -553,7 +553,6 @@ int main(int argc, char *argv[])
                 }
               }
             }
-            else continue;
           }
         }
         //std::cout << "search_distance: " << search_distance << ", RKF: " << sum_RKF << ", MRKF_CC: " << sum_MRKF_CC << ", MRKF_CN: " << sum_MRKF_CN << ", MRKF_NC: " << sum_MRKF_NC << ", MRKF_NN: " << sum_MRKF_NN << std::endl;
