@@ -192,6 +192,7 @@ int main(int argc, char *argv[])
   BranchF(ang_EEC_beta_8);
   BranchF(ang_EEC_beta_9);
   BranchF(ang_EEC_beta_10);
+  //BranchAF(ang_EEC_beta,31);
   // Geomoment of charged daughter inside jet shape and outside jet shape 
   BranchF(inner_charged_GeoMoment_0_1);
   BranchF(inner_charged_GeoMoment_1_2);
@@ -393,7 +394,9 @@ int main(int argc, char *argv[])
       ang_EEC_beta_8 = 0;
       ang_EEC_beta_9 = 0;
       ang_EEC_beta_10 = 0;
-      
+     
+      //memset(ang_EEC_beta, 0, sizeof(ang_EEC_beta));
+ 
       inner_charged_GeoMoment_0_1 = 0;
       inner_charged_GeoMoment_1_2 = 0;
       inner_charged_GeoMoment_2_3 = 0;
@@ -553,9 +556,9 @@ int main(int argc, char *argv[])
                 }
               }
             }
+          //std::cout << "search_distance: " << search_distance << ", RKF: " << RKF[t] << ", MRKF_CC: " << MRKF_CC[t] << ", MRKF_CN: " << MRKF_CN[t] << ", MRKF_NC: " << MRKF_NC[t] << ", MRKF_NN: " << MRKF_NN[t)] << std::endl;
           }
         }
-        //std::cout << "search_distance: " << search_distance << ", RKF: " << sum_RKF << ", MRKF_CC: " << sum_MRKF_CC << ", MRKF_CN: " << sum_MRKF_CN << ", MRKF_NC: " << sum_MRKF_NC << ", MRKF_NN: " << sum_MRKF_NN << std::endl;
       }
       RKF_01 = RKF[9];
       MRKF_CC_01 = MRKF_CC[9];
@@ -680,6 +683,9 @@ int main(int argc, char *argv[])
 	    auto dau_i = jet->Constituents.At(i);
 	    auto track_i = dynamic_cast<Track*>(dau_i);
 	    if (track_i) {
+//	      for (t = 0; t<31, ++t){
+//		ang_EEC_beta[t] += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), t*0.1))/(sum_track_pt);
+//	      }
 	      ang_EEC_beta_0 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0))/(sum_track_pt);
 	      ang_EEC_beta_1 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.1))/(sum_track_pt);
 	      ang_EEC_beta_2 += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), 0.2))/(sum_track_pt);
