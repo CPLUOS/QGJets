@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
   BranchAF(MRKF_NN, 80);
 
   BranchVF(deltaR);
-
+  //BranchVF(deltaR_double);
 #endif
 
   BranchVF(dau_pt);
@@ -458,6 +458,7 @@ int main(int argc, char *argv[])
       memset(MRKF_NN,0, sizeof(MRKF_NN));
 
       deltaR.clear();
+      //deltaR_double.clear();
 #endif
 
 
@@ -512,6 +513,7 @@ int main(int argc, char *argv[])
 	if (study_area < dr_c) continue;
         for (size_t d = 0; d < dau_pt.size(); ++d ) {
           if (c == d) continue;
+          //deltaR_double.push_back(DeltaR(dau_deta[c] - dau_deta[d], dau_dphi[c] - dau_dphi[d])); // include double counting
           auto dau_d = jet->Constituents.At(d);
           double deta_d = dau_deta[d];
           double dphi_d = dau_dphi[d];
