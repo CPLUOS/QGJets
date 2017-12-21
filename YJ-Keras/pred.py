@@ -13,19 +13,23 @@ import numpy as np
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 from importlib import import_module
+from array import array
 import matplotlib.pyplot as plt
+import ROOT as rt
 plt.switch_backend('agg')
 config =tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction=0.1
 set_session(tf.Session(config=config))
 
-batch_size = 100
+batch_size = 500
 num_classes = 2
 epochs = 20
 
 parser=argparse.ArgumentParser()
 parser.add_argument("--rat",type=float,default=0.6,help='ratio for weak qg batch')
-parser.add_argument("--epoch",type=int,default=10,help='epoch')
+parser.add_argument("--new",type=int,default=1,help='new or old')
+parser.add_argument("--result",type=int,default=0,help='save result')
+parser.add_argument("--epoch",type=int,default=-1,help='epoch')
 parser.add_argument("--load",type=str,default="weakdijet_0.8",help='load name')
 parser.add_argument("--save",type=str,default=1,help='rch')
 args=parser.parse_args()
@@ -33,16 +37,6 @@ args=parser.parse_args()
 # input image dimensions
 img_rows, img_cols = 33, 33
 
-# the data, shuffled and split between train and test sets
-#(x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-#if K.image_data_format() == 'channels_first':
-#    x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-#    x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-#    input_shape = (1, img_rows, img_cols)
-#else:
-#x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-#x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
 input_shape = (3,img_rows, img_cols)
 
 #model.compile(loss=keras.losses.categorical_crossentropy,
@@ -50,16 +44,66 @@ input_shape = (3,img_rows, img_cols)
 #              metrics=['accuracy'])
 #model=keras.models.load_model('save/fullydijetsame_10')
 savename="save/"+args.load
+#if(args.result==1):
+#	f=open(savename+"/history",'r')
+#	args.epoch=int(f.readline())
+if(args.epoch==-1):
+	f=open(savename+'/history')
+	args.epoch=eval(f.readline())
+	f.close()
 model=keras.models.load_model(savename+"/_"+str(args.epoch))
 
 #train=wkiter(["root/cutb/q"+str(int(args.rat*100))+"img.root","root/cutb/g"+str(int(args.rat*100))+"img.root"],batch_size=batch_size,end=1,istrain=1,friend=0)
-test=wkiter("root",friend=20,begin=5./7.,end=1.,batch_size=batch_size)
+#test=wkiter("root",friend=20,begin=5./7.,end=1.,batch_size=batch_size)
+if(args.result==1):train=wkiter(["root/new/trainq"+str(int(args.rat*100))+"img.root","root/new/traing"+str(int(args.rat*100))+"img.root"],batch_size=batch_size,end=1.,istrain=1,friend=0)
+if(args.new==0):test=wkiter(["root/cutb/testq100img.root","root/cutb/testg100img.root"],batch_size=batch_size,end=1.,istrain=0,friend=0)
+if(args.new==1):
+	test=wkiter(["root/new/mg5_pp_qq_balanced_pt_100_500_sum_img.root","root/new/mg5_pp_gg_balanced_pt_100_500_sum_img.root"],batch_size=batch_size,begin=0./7.,end=1,istrain=0,friend=0)
 from sklearn.metrics import roc_auc_score, auc,precision_recall_curve,roc_curve,average_precision_score
 x=[]
 y=[]
 g=[]
 q=[]
-entries=500
+print train.totalnum()
+print test.totalnum()
+if(args.result==1):
+	f=rt.TFile(savename+"/out.root",'recreate')
+	qt=rt.TTree("quark","quark")
+	gt=rt.TTree("gluon","gluon")
+	l=array('i',[0])
+	o=array('f',[0])
+	qt.Branch("output",o,"output/F")
+	gt.Branch("output",o,"output/F")
+	batch_num=batch_size
+	nn=0
+	for j in range(test.totalnum()+1):
+		if(test.endfile==1):break
+		a,c=test.test()
+		b=model.predict(a,verbose=0)[:,0]
+		for i in range(len(b)):
+			nn+=1
+			o[0]=b[i]
+			if(c[i][0]==1):
+				gt.Fill()
+			else:
+				qt.Fill()
+		
+	"""for j in range(test.totalnum()):
+		a,c=test.test()
+		b=model.predict(a,verbose=0)[:,0]
+		for i in range(batch_num):
+			nn+=1
+			o[0]=b[i]
+			if(c[i][0]==1):
+				gt.Fill()
+			else:
+				qt.Fill()
+	"""
+	f.Write()
+	f.Close()
+	print nn
+	
+"""entries=500
 batch_num=batch_size
 print ("eval",test.totalnum())
 for j in range(entries):
@@ -79,10 +123,10 @@ plt.legend(loc="upper center")
 plt.savefig(savename+"/like"+str(args.epoch)+".png")
 t_fpr,t_tpr,_=roc_curve(x,y)
 t_fnr=1-t_fpr
-train_auc=np.around(auc(t_fpr,t_tpr),4)
+test_auc=np.around(auc(t_fpr,t_tpr),4)
 plt.figure(2)
-plt.plot(t_tpr,t_fnr,alpha=0.5,label="AUC={}".format(train_auc),lw=2)
+plt.plot(t_tpr,t_fnr,alpha=0.5,label="AUC={}".format(test_auc),lw=2)
 plt.legend(loc='lower left')
-plt.savefig(savename+"/roc"+str(args.epoch)+".png")
+plt.savefig(savename+"/roc"+str(args.epoch)+str(test_auc)+".png")
 #print(b,c)
-
+"""
