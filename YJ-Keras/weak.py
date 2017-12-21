@@ -17,9 +17,11 @@ import numpy as np
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 from importlib import import_module
+
 import os
 config =tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction=0.4
+
 set_session(tf.Session(config=config))
 
 batch_size = 500
@@ -27,8 +29,10 @@ num_classes = 2
 epochs = 20
 
 parser=argparse.ArgumentParser()
+
 parser.add_argument("--rat",type=float,default=0.6,help='ratio for weak qg batch')
 parser.add_argument("--save",type=str,default="weakdijet_",help='save name')
+
 args=parser.parse_args()
 
 # input image dimensions
@@ -45,7 +49,6 @@ img_rows, img_cols = 33, 33
 #x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
 #x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
 input_shape = (3,img_rows, img_cols)
-
 
 net=import_module('symbols.'+"asvgg")
 model=net.get_symbol(input_shape,num_classes)
@@ -67,6 +70,7 @@ for i in range(epochs):
 	print("epoch",i)
 	checkpoint=keras.callbacks.ModelCheckpoint(filepath=savename+'/_'+str(i),monitor='val_loss',verbose=0,save_best_only=False,mode='auto')
 	model.fit_generator(train.next(),steps_per_epoch=train.totalnum(),validation_data=test.next(),validation_steps=test.totalnum(),epochs=1,verbose=1,callbacks=[logger,checkpoint])
+
 	train.reset()
 	test.reset()
 	"""while True:
