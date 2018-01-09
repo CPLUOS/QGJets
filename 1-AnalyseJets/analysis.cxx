@@ -181,7 +181,9 @@ int main(int argc, char *argv[])
   BranchF(weighted_outerring);
   BranchF(drmax);
   // Track-based Energy-Energy-Correlation(EEC) angularity (beta is tunable)
+
   BranchAF(ang_EEC_beta,31);
+
   // Geomoment of charged daughter inside jet shape and outside jet shape 
   BranchF(inner_charged_GeoMoment_0_1);
   BranchF(inner_charged_GeoMoment_1_2);
@@ -191,6 +193,7 @@ int main(int argc, char *argv[])
   // charged daughter sum
   BranchF(sum_track_pt);
   //Ripley's K function
+
   BranchAF(RKF, 80);
   BranchAF(MRKF_CC, 80);
   BranchAF(MRKF_CN, 80);
@@ -449,6 +452,53 @@ int main(int argc, char *argv[])
           }
         }
       }
+      RKF_01 = RKF[9];
+      MRKF_CC_01 = MRKF_CC[9];
+      MRKF_CN_01 = MRKF_CN[9];
+      MRKF_NC_01 = MRKF_NC[9];
+      MRKF_NN_01 = MRKF_NN[9];
+
+      RKF_02 = RKF[19];
+      MRKF_CC_02 = MRKF_CC[19];
+      MRKF_CN_02 = MRKF_CN[19];
+      MRKF_NC_02 = MRKF_NC[19];
+      MRKF_NN_02 = MRKF_NN[19];
+
+      RKF_03 = RKF[29];
+      MRKF_CC_03 = MRKF_CC[29];
+      MRKF_CN_03 = MRKF_CN[29];
+      MRKF_NC_03 = MRKF_NC[29];
+      MRKF_NN_03 = MRKF_NN[29];
+
+      RKF_04 = RKF[39];
+      MRKF_CC_04 = MRKF_CC[39];
+      MRKF_CN_04 = MRKF_CN[39];
+      MRKF_NC_04 = MRKF_NC[39];
+      MRKF_NN_04 = MRKF_NN[39];
+
+      RKF_05 = RKF[49];
+      MRKF_CC_05 = MRKF_CC[49];
+      MRKF_CN_05 = MRKF_CN[49];
+      MRKF_NC_05 = MRKF_NC[49];
+      MRKF_NN_05 = MRKF_NN[49];
+
+      RKF_06 = RKF[59];
+      MRKF_CC_06 = MRKF_CC[59];
+      MRKF_CN_06 = MRKF_CN[59];
+      MRKF_NC_06 = MRKF_NC[59];
+      MRKF_NN_06 = MRKF_NN[59];
+
+      RKF_07 = RKF[69];
+      MRKF_CC_07 = MRKF_CC[69];
+      MRKF_CN_07 = MRKF_CN[69];
+      MRKF_NC_07 = MRKF_NC[69];
+      MRKF_NN_07 = MRKF_NN[69];
+
+      RKF_08 = RKF[79];
+      MRKF_CC_08 = MRKF_CC[79];
+      MRKF_CN_08 = MRKF_CN[79];
+      MRKF_NC_08 = MRKF_NC[79];
+      MRKF_NN_08 = MRKF_NN[79];
 
 #endif
 
