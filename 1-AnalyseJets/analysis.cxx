@@ -643,7 +643,7 @@ bool passZjets(TClonesArray * jets, TClonesArray * muons, TClonesArray * electro
   if (pass_Zjets) {
     auto j = (const Jet *) jets->At(iMaxPt);
     // require them to be back to back
-    if (DeltaPhi(j->Phi, theDimuon.Phi()) < 2.5)
+    if (DeltaPhi(j->Phi, theDimuon.Phi()) < 2.1)
       pass_Zjets = false;
     for (unsigned k = 0; k < jets->GetEntries(); ++k) {
       if (k == iMaxPt) continue;
