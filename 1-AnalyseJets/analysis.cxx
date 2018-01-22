@@ -252,6 +252,7 @@ int main(int argc, char *argv[])
     for (unsigned j = 0; j < jets->GetEntries(); ++j) {
       lepton_overlap = false;
       if (j >= 2) balanced = false; // only top 2 balanced
+      if (j >= 1) pass_Zjets = false; // only top 1 passes ZJet!
 
       auto jet = (Jet*) jets->At(j);
 
@@ -519,7 +520,7 @@ int main(int argc, char *argv[])
 	    auto dau_i = jet->Constituents.At(i);
 	    auto track_i = dynamic_cast<Track*>(dau_i);
 	    if (track_i) {
-	      for (t = 0; t<31, ++t){
+	      for (int t = 0; t<31; ++t) {
 		ang_EEC_beta[t] += (track_ic->PT*track_i->PT)*(powf(DeltaR(track_ic->Eta - track_i->Eta, track_ic->Phi - track_i->Phi), t*0.1))/(sum_track_pt);
 	      }
 	    }
