@@ -33,7 +33,7 @@ def mean_squared_error(y_true,y_pred):
 	return K.mean(K.square(y_pred - y_true),axis=-1)
 batch_size = 500
 num_classes = 2
-epochs = 25
+epochs = 20
 
 parser=argparse.ArgumentParser()
 parser.add_argument("--rat",type=float,default=0.6,help='ratio for weak qg batch')
@@ -84,12 +84,18 @@ print ("train",train.totalnum(),"eval",test.totalnum())
 #logger=keras.callbacks.CSVLogger(savename+'/log.log',append=True)
 logger=keras.callbacks.TensorBoard(log_dir=savename+'/logs',histogram_freq=0, write_graph=True , write_images=True, batch_size=batch_size)
 history=0
-checkpoint=keras.callbacks.ModelCheckpoint(filepath=savename+'/_{epoch}',monitor='val_loss',verbose=0,save_best_only=False,mode='auto',period=1)
+checkpoint=keras.callbacks.ModelCheckpoint(filepath=savename+'/_{epoch}',monitor='val_loss',verbose=0,save_best_only=True,mode='auto',period=1)
 history=model.fit_generator(train.next(),steps_per_epoch=train.totalnum(),validation_data=test.next(),validation_steps=test.totalnum(),epochs=epochs,verbose=1,callbacks=[logger,checkpoint])
 #train.reset()
 #test.reset()
 print(history)
 f=open(savename+'/history','w')
-f.write(str(history.history['val_acc'].index(max(history.history['acc'])))+'\n')
+try:
+  one=history.history['val_acc'].index(max(history.history['val_acc']))
+  f.write(str(one)+'\n')
+  print(one)
+  for i in range(epochs):
+    if(i!=one):os.system("rm "+savename+"/_"+str(i+1))
+except:pass
 f.write(str(history.history))
 f.close()

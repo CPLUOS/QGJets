@@ -31,7 +31,8 @@ parser.add_argument("--new",type=int,default=1,help='new or old')
 parser.add_argument("--result",type=int,default=0,help='save result')
 parser.add_argument("--epoch",type=int,default=-1,help='epoch')
 parser.add_argument("--load",type=str,default="weakdijet_0.8",help='load name')
-parser.add_argument("--save",type=str,default=1,help='rch')
+parser.add_argument("--save",type=str,default="test",help='rch')
+parser.add_argument("--ztest",type=int,default="0",help='rch')
 args=parser.parse_args()
 
 # input image dimensions
@@ -49,7 +50,7 @@ savename="save/"+args.load
 #	args.epoch=int(f.readline())
 if(args.epoch==-1):
 	f=open(savename+'/history')
-	args.epoch=eval(f.readline())
+	args.epoch=eval(f.readline())+1
 	f.close()
 model=keras.models.load_model(savename+"/_"+str(args.epoch))
 
@@ -58,15 +59,16 @@ model=keras.models.load_model(savename+"/_"+str(args.epoch))
 if(args.result==1):train=wkiter(["root/new/trainq"+str(int(args.rat*100))+"img.root","root/new/traing"+str(int(args.rat*100))+"img.root"],batch_size=batch_size,end=1.,istrain=1,friend=0)
 if(args.new==0):test=wkiter(["root/cutb/testq100img.root","root/cutb/testg100img.root"],batch_size=batch_size,end=1.,istrain=0,friend=0)
 if(args.new==1):
-	test=wkiter(["root/new/mg5_pp_qq_balanced_pt_100_500_sum_img.root","root/new/mg5_pp_gg_balanced_pt_100_500_sum_img.root"],batch_size=batch_size,begin=0./7.,end=1,istrain=0,friend=0)
+	if(args.ztest==1):test=wkiter(["root/new/mg5_pp_zq_passed_pt_100_500_sum_img.root","root/new/mg5_p1p_zg_passed_pt_100_500_sum_img.root"],batch_size=batch_size,begin=5./7.,end=1,istrain=0,friend=0)
+	else:test=wkiter(["root/new/mg5_pp_qq_balanced_pt_100_500_sum_img.root","root/new/mg5_pp_gg_balanced_pt_100_500_sum_img.root"],batch_size=batch_size,begin=5./7.,end=1,istrain=0,friend=0)
 from sklearn.metrics import roc_auc_score, auc,precision_recall_curve,roc_curve,average_precision_score
 x=[]
 y=[]
 g=[]
 q=[]
-print train.totalnum()
 print test.totalnum()
 if(args.result==1):
+	print train.totalnum()
 	f=rt.TFile(savename+"/out.root",'recreate')
 	qt=rt.TTree("quark","quark")
 	gt=rt.TTree("gluon","gluon")
@@ -103,7 +105,7 @@ if(args.result==1):
 	f.Close()
 	print nn
 	
-"""entries=500
+entries=300
 batch_num=batch_size
 print ("eval",test.totalnum())
 for j in range(entries):
@@ -120,13 +122,21 @@ plt.figure(1)
 plt.hist(q,bins=50,weights=np.ones_like(q),histtype='step',alpha=0.7,label='quark')
 plt.hist(g,bins=50,weights=np.ones_like(g),histtype='step',alpha=0.7,label='gluon')
 plt.legend(loc="upper center")
-plt.savefig(savename+"/like"+str(args.epoch)+".png")
+plt.savefig(savename+"/"+args.save+"out.png")
+f=open(savename+"/"+args.save+"out.dat",'w')
+f.write(str(q)+"\n")
+f.write(str(g))
+f.close
 t_fpr,t_tpr,_=roc_curve(x,y)
 t_fnr=1-t_fpr
 test_auc=np.around(auc(t_fpr,t_tpr),4)
 plt.figure(2)
 plt.plot(t_tpr,t_fnr,alpha=0.5,label="AUC={}".format(test_auc),lw=2)
 plt.legend(loc='lower left')
-plt.savefig(savename+"/roc"+str(args.epoch)+str(test_auc)+".png")
+plt.savefig(savename+"/"+args.save+"roc"+str(test_auc)+".png")
+f=open(savename+"/"+args.save+"roc.dat",'w')
+f.write(str(t_tpr.tolist())+'\n')
+f.write(str(t_fnr.tolist()))
+f.close()
 #print(b,c)
-"""
+
