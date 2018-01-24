@@ -12,11 +12,13 @@ class wkiter(object):
   def __init__(self,data_path,data_names=['data'],label_names=['softmax_label'],batch_size=100,begin=0.0,end=1.0,rat=0.7,endcut=1,arnum=16,maxx=0.4,maxy=0.4,istrain=0, fstart=0, friend=0, zboson=0,varbs=0,w=0):
     self.istrain=istrain
     #if(batch_size<100):
+    self.rand=0.5
     #  print("batch_size is small it might cause error")
     self.friend=friend
     self.zboson=zboson
     self.w=w
     print(self.friend,istrain)
+    self.count=0
     if(friend!=0):  
       if(self.zboson==0):
         data_path=["root/cutb/mg5_pp_qq_balanced_pt_100_500_","root/cutb/mg5_pp_gg_balanced_pt_100_500_"]
@@ -66,7 +68,6 @@ class wkiter(object):
         self.gEnd.append(int(self.gEntries[i]*end))
         self.qnum+=self.qEnd[i]-self.qBegin[i]
         self.gnum+=self.gEnd[i]-self.gBegin[i]
-
       self.a=self.gBegin[0]
       self.b=self.qBegin[0]
       self.aq=self.gBegin[self.frat]
@@ -114,6 +115,7 @@ class wkiter(object):
     return self
 
   def reset(self):
+    self.rand=0.5
     if(self.friend!=0):
       #print("@@",self.istrain,"g",self.gf,"q",self.qf,"@@")
       for i in range(self.friend):
@@ -128,12 +130,14 @@ class wkiter(object):
       self.gq=self.frat
       self.qg=self.frat
       self.endfile=0
+      self.count=0
     else:
       self.qjet.GetEntry(self.qBegin)
       self.gjet.GetEntry(self.gBegin)
       self.a=self.gBegin
       self.b=self.qBegin
       self.endfile = 0
+      self.count=0
 
   def __next__(self):
     return self.next()
@@ -159,10 +163,10 @@ class wkiter(object):
       #  a+=self.qEnd[i]-self.qBegin[i]+self.gEnd[i]-self.qBegin[i]
       return int((self.qnum+self.gnum)/self.batch_size*0.80)
     else:
-      return int((self.qEnd-self.qBegin+self.gEnd-self.qBegin)/self.batch_size*0.80)
-
+      return int((self.qEnd-self.qBegin+self.gEnd-self.gBegin)/(self.batch_size*1.00))
   def next(self):
     while self.endfile==0:
+      self.count+=1
       arnum=self.arnum
       jetset=[]
       variables=[]
@@ -206,7 +210,7 @@ class wkiter(object):
                 if(self.qf==self.friend):
                   self.endfile=1
                   self.qf=0
-                self.b=self.gBegin[self.qf]
+                self.b=self.qBegin[self.qf]
           ####-----------
 	  else:
             if(random.random()<rand):
@@ -249,7 +253,7 @@ class wkiter(object):
                   if(self.qf==self.frat):
                     self.endfile=1
                     self.qf=0
-                  self.b=self.gBegin[self.qf]
+                  self.b=self.qBegin[self.qf]
               else:
                 self.gjet[self.qg].GetEntry(self.bg)
                 self.bg+=1
@@ -262,7 +266,7 @@ class wkiter(object):
                   if(self.qg==self.friend):
                     self.endfile=1
                     self.qg=self.frat
-                  self.bg=self.gBegin[self.qg]
+                  self.bg=self.qBegin[self.qg]
 
 
         else:
@@ -281,7 +285,7 @@ class wkiter(object):
             jetset.append(np.array(self.qim).reshape((3,2*arnum+1,2*arnum+1)))
             labels.append([0,1])
             if(self.b>=self.qEnd):
-              self.b=self.gBegin
+              self.b=self.qBegin
               self.endfile=1
           #if(rand<0.5):
           #    labels.append(0)
@@ -295,29 +299,32 @@ class wkiter(object):
       else:
         data=np.array(jetset)
       label=np.array(labels)
+      #if(self.totalnum()<=self.count):
+      #  if(self.istrain==1):print "\nreset\n"
+      #  self.reset()
+      if(self.endfile==1):
+        #print "\nendd\n"
+        self.reset()
+      #print "\n",self.count,self.istrain,"\n"
       yield data, label
     #else:
       #if(self.istrain==1):
       #  print "\n",datetime.datetime.now()  
       #raise StopIteration
 
-  def test(self):
+  def test(self):#difference is return
     while self.endfile==0:
       arnum=self.arnum
       jetset=[]
       variables=[]
       labels=[]
+      nn=0
       rand=random.choice(self.rat)
-      if(self.friend!=0 and self.zboson==0 and self.istrain==1):
-        rand=0.4
-      if(self.friend!=0 and self.zboson==0 and self.istrain==0):
-        rand=0.31354286
       if(self.friend!=0 and self.zboson==1):
         rand=0.526
       if(self.friend!=0 and self.zboson==0 and self.istrain==1 and self.w==1):
         rand=0.37
-      if(self.friend!=0):
-        rand=self.gnum/1./(self.qnum+self.gnum)
+        #rand=self.gnum/1./(self.qnum+self.gnum)
       for i in range(self.batch_size):
         if(self.friend!=0):
           if(self.w==0):
@@ -346,7 +353,7 @@ class wkiter(object):
                 if(self.qf==self.friend):
                   self.endfile=1
                   self.qf=0
-                self.b=self.gBegin[self.qf]
+                self.b=self.qBegin[self.qf]
           ####-----------
 	  else:
             if(random.random()<rand):
@@ -363,19 +370,6 @@ class wkiter(object):
                     self.endfile=1
                     self.gf=0
                   self.a=self.gBegin[self.gf]
-              else:
-                self.qjet[self.gq].GetEntry(self.aq)
-                self.aq+=1
-                jetset.append(np.array(self.gim[self.gq]).reshape((3,2*arnum+1,2*arnum+1)))
-                labels.append([1,0])
-                if(self.varbs==1):
-                  variables.append([self.qjet[self.gq].ptD,self.qjet[self.gq].axis1,self.qjet[self.gq].axis2,self.qjet[self.gq].nmult,self.qjet[self.gq].cmult])
-                if(self.aq>=self.gEnd[self.gq]):
-                  self.gq+=1
-                  if(self.gq==self.friend):
-                    self.endfile=1
-                    self.gq=self.frat
-                  self.aq=self.gBegin[self.gq]
             else:
               if(random.random()<self.ratt):
                 self.qjet[self.qf].GetEntry(self.b)
@@ -389,40 +383,37 @@ class wkiter(object):
                   if(self.qf==self.frat):
                     self.endfile=1
                     self.qf=0
-                  self.b=self.gBegin[self.qf]
-              else:
-                self.gjet[self.qg].GetEntry(self.bg)
-                self.bg+=1
-                jetset.append(np.array(self.qim[self.qg]).reshape((3,2*arnum+1,2*arnum+1)))
-                labels.append([0,1])
-                if(self.varbs==1):
-                  variables.append([self.gjet[self.qg].ptD,self.gjet[self.qg].axis1,self.gjet[self.qg].axis2,self.gjet[self.qg].nmult,self.gjet[self.qg].cmult])
-                if(self.bg>=self.qEnd[self.qg]):
-                  self.qg+=1
-                  if(self.qg==self.friend):
-                    self.endfile=1
-                    self.qg=self.frat
-                  self.bg=self.gBegin[self.qg]
+                  self.b=self.qBegin[self.qf]
 
 
         else:
-          if(random.random()<0.5):
-          #if(random.random()<rand):
+          #if(random.random()<0.5):
+          if(random.random()<self.rand):
             self.gjet.GetEntry(self.a)
             self.a+=1
             jetset.append(np.array(self.gim).reshape((3,2*arnum+1,2*arnum+1)))
             labels.append([1,0])
             if(self.a>=self.gEnd):
-              self.a=self.gBegin
-              self.endfile=1
+	      print("@gend")
+              if(self.rand==1):
+                self.endfile=1
+	      	print("gend")
+		break
+	      self.a=self.gBegin
+	      self.rand=0
           else:
             self.qjet.GetEntry(self.b)
             self.b+=1
             jetset.append(np.array(self.qim).reshape((3,2*arnum+1,2*arnum+1)))
             labels.append([0,1])
             if(self.b>=self.qEnd):
-              self.b=self.gBegin
-              self.endfile=1
+	      print("@qend")
+	      if(self.rand==0):
+                self.endfile=1
+	        print("qend")
+		break
+              self.b=self.qBegin
+	      self.rand=1
           #if(rand<0.5):
           #    labels.append(0)
           #else:
@@ -436,8 +427,8 @@ class wkiter(object):
         data=np.array(jetset)
       label=np.array(labels)
       return [data,label]
-    #else:
-      #if(self.istrain==1):
-      #  print "\n",datetime.datetime.now()  
+    else:
+      if(self.istrain==1):
+        print "\n",datetime.datetime.now()  
       #raise StopIteration
 
